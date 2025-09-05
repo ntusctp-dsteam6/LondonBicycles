@@ -1,0 +1,12 @@
+name: 'LondonBicycles'
+version: '1.0'
+config-version: 2
+
+profile: 'LondonBicycles'
+
+models:
+  LondonBicycles:
+    staging:
+      +materialized: view
+    marts:
+      +materialized: table

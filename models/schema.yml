@@ -1,0 +1,42 @@
+version: 2
+
+models:
+  - name: stg_cycle_hire
+    description: Raw staging model for London Bikeshare
+    columns:
+      - name: rental_id
+        tests: [not_null, unique]
+      - name: bike_id
+        tests: [not_null]
+
+  - name: stg_cycle_stations
+    description: Staging model for London Bikeshare stations
+    columns:
+      - name: station_id
+        tests: [not_null, unique]
+      - name: station_name
+        tests: [not_null]
+
+  - name: fact_trips
+    description: Fact table of bike trips
+    columns:
+      - name: rental_id
+        tests: [not_null, unique]
+
+  - name: dim_stations
+    description: Dimension table for stations
+    columns:
+      - name: station_id
+        tests: [not_null, unique]
+
+  - name: dim_dates
+    description: Dimension table for trip dates
+    columns:
+      - name: date
+        tests: [not_null, unique]
+
+  - name: dim_bikes
+    description: Dimension table for bikes
+    columns:
+      - name: bike_id
+        tests: [not_null, unique]
