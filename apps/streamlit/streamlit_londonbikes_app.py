@@ -1,477 +1,656 @@
-import os
-import json
-from datetime import date, timedelta
-
+import streamlit as st
 import pandas as pd
 import plotly.express as px
-import streamlit as st
-from dotenv import load_dotenv
 from google.cloud import bigquery
-from google.oauth2 import service_account
-from typing import Any, List
+from google.cloud import bigquery_storage
+from dotenv import load_dotenv
+import os
+from datetime import date
+import plotly.graph_objects as go
+import numpy as np
+from PIL import Image
 
 
-st.set_page_config(page_title="London Bikes Explorer", page_icon="🚲", layout="wide")
+
+# -----------------------------
+# Page Config
+# -----------------------------
+st.set_page_config(page_title="London Bikes Analytics", layout="wide")
+st.title("🚴 London Bikes Analytics")
 
 
-def sql_dt(field: str) -> str:
-    """Return a robust DATE expression for mixed storage types of trip_start.
+# Load image
+img_path = "/Users/anjan/DSAI_Project_Group6/LondonBicycles/Image.png"
+img = Image.open(img_path)
 
-    Logic:
-    - If the value can be interpreted as INT64 (millis), and within valid range,
-      use DATE(TIMESTAMP_MILLIS(...)). If out of range, return NULL.
-    - Otherwise, assume it's already a TIMESTAMP/DATE/DATETIME and use DATE(field).
-      (Avoid unsupported CASTs like INT64 -> TIMESTAMP.)
-    """
-    f = field
-    ms = f"SAFE_CAST({f} AS INT64)"
-    within = f"({ms} BETWEEN 0 AND 253402300799000)"  # ~9999-12-31
-    return (
-        f"CASE WHEN {ms} IS NOT NULL THEN "
-        f"  CASE WHEN {within} THEN DATE(TIMESTAMP_MILLIS({ms})) ELSE NULL END "
-        f"ELSE DATE({f}) END"
+# Crop height by half (keep top half)
+width, height = img.size
+img_cropped = img.crop((0, 0, width, height // 2))  # (left, top, right, bottom)
+
+# Display in Streamlit
+st.image(img_cropped, use_container_width=True)
+
+# -----------------------------
+# Setup
+# -----------------------------
+load_dotenv()
+project_id = os.environ.get("DSAI_PROJECT_ID")
+analytics_dataset = "LondonBicycles_Analytics"
+
+client = bigquery.Client(project=project_id)
+bqstorage_client = bigquery_storage.BigQueryReadClient()
+
+@st.cache_data(show_spinner=True)
+def load_table(table_name, last_12_months_only=False):
+    query = f"SELECT * FROM `{project_id}.{analytics_dataset}.{table_name}`"
+    return client.query(query).to_dataframe()
+
+# -----------------------------
+# Load Tables
+# -----------------------------
+daily_df = load_table("daily_summaries")
+hourly_df = load_table("hourly_counts")
+top_stations_df = load_table("top_stations")
+duration_df = load_table("trip_duration_histogram")
+route_df = load_table("route_popularity")
+duration_band_df = load_table("duration_band")
+return_origin_df = load_table("return_to_origin")
+supply_demand_df = load_table("station_demand_supply_gap")
+station_static = load_table("station_static")
+
+# Combine station trips across all months/years
+top_stations_agg = top_stations_df.groupby('station_name')[['trips_started','trips_ended']].sum().reset_index()
+top_stations_agg['total_trips'] = top_stations_agg['trips_started'] + top_stations_agg['trips_ended']
+
+# Determine latest year for supply/demand analysis
+latest_year = supply_demand_df['year'].max()
+supply_latest_year = supply_demand_df[supply_demand_df['year']==latest_year -1]
+
+# -----------------------------
+# Tabs
+# -----------------------------
+tabs = st.tabs(["Overall Trends", "Stations & Routes", "Trip Duration & Return", "Supply & Net Inflow"])
+
+# -----------------------------
+# Tab 1: Overall Trends
+# -----------------------------
+with tabs[0]:
+    st.header("📊 Overall Trend Analysis")
+    col1, col2, col3 = st.columns(3)
+
+    # Compute average trips per year
+    avg_trips_per_year = daily_df.groupby('year')['trip_count'].sum().mean()
+    col1.metric("Average Trips per Year", f"{avg_trips_per_year:,.0f}")
+
+    col2.metric("Avg Duration (min)", f"{daily_df['avg_duration_minutes'].mean():.2f}")
+
+
+    # Compute year with maximum total trips
+    year_max_trips = daily_df.groupby('year')['trip_count'].sum().idxmax()
+    total_trips_max_year = daily_df.groupby('year')['trip_count'].sum().max()
+    col3.metric("Year with Max Trips", f"{year_max_trips}", f"{total_trips_max_year:,} trips")
+
+
+    # Prepare monthly data
+    monthly_df = (
+        daily_df.groupby(['year', 'month'], as_index=False)['trip_count']
+        .sum()
     )
 
+    # Keep only the last 5 years
+    last_5_years = sorted(monthly_df['year'].unique())[-5:]
+    monthly_df = monthly_df[monthly_df['year'].isin(last_5_years)]
 
-def make_daily_trips_sql(project: str, dataset: str, start_date: str, end_date: str,
-                         start_station: str | None = None, end_station: str | None = None) -> str:
-    ms = "SAFE_CAST(trip_start AS INT64)"
-    dt = f"DATE(TIMESTAMP_MILLIS({ms}))"
-    guards = [f"{ms} IS NOT NULL", f"{ms} BETWEEN 0 AND 253402300799000",
-              f"{dt} BETWEEN DATE('{start_date}') AND DATE('{end_date}')"]
-    if start_station:
-        guards.append("start_station_name = '" + start_station.replace("'", "\\'") + "'")
-    if end_station:
-        guards.append("end_station_name = '" + end_station.replace("'", "\\'") + "'")
-    where_sql = " AND ".join(guards)
-    return f"""
-SELECT {dt} AS dt, COUNT(*) AS trips
-FROM `{project}.{dataset}.fact_trips`
-WHERE {where_sql}
-GROUP BY dt
-ORDER BY dt
-""".strip()
-
-
-def make_top_stations_sql(project: str, dataset: str, n: int = 15, direction: str = "start") -> str:
-    col = "start_station_name" if direction == "start" else "end_station_name"
-    return f"""
-SELECT {col} AS station, COUNT(*) AS trips
-FROM `{project}.{dataset}.fact_trips`
-GROUP BY {col}
-ORDER BY trips DESC
-LIMIT {n}
-""".strip()
-
-
-def make_duration_hist_sql(project: str, dataset: str) -> str:
-    return f"""
-SELECT
-  CAST(ROUND(duration/60.0, 0) AS INT64) AS minutes_bin,
-  COUNT(*) AS trips
-FROM `{project}.{dataset}.fact_trips`
-WHERE duration IS NOT NULL AND duration >= 0 AND duration <= 4*60*60
-GROUP BY minutes_bin
-ORDER BY minutes_bin
-""".strip()
-
-
-def make_dim_stations_sql(project: str, dataset: str) -> str:
-    return f"""
-SELECT station_id, station_name, latitude, longitude
-FROM `{project}.{dataset}.dim_stations`
-""".strip()
-
-
-def make_top_routes_sql(project: str, dataset: str, limit: int = 20) -> str:
-    return f"""
-SELECT start_station_name AS start_station,
-       end_station_name   AS end_station,
-       COUNT(*)           AS trips
-FROM `{project}.{dataset}.fact_trips`
-GROUP BY start_station, end_station
-ORDER BY trips DESC
-LIMIT {limit}
-""".strip()
-
-
-def make_top_routes_map_sql(project: str, dataset: str, limit: int = 10) -> str:
-    return f"""
-WITH top_routes AS (
-  SELECT start_station_id, end_station_id, COUNT(*) AS trips
-  FROM `{project}.{dataset}.fact_trips`
-  GROUP BY 1,2
-  ORDER BY trips DESC
-  LIMIT {limit}
-)
-SELECT
-  r.trips,
-  s1.station_name AS start_station,
-  s1.latitude     AS start_lat,
-  s1.longitude    AS start_lon,
-  s2.station_name AS end_station,
-  s2.latitude     AS end_lat,
-  s2.longitude    AS end_lon
-FROM top_routes r
-JOIN `{project}.{dataset}.dim_stations` s1 ON s1.station_id = r.start_station_id
-JOIN `{project}.{dataset}.dim_stations` s2 ON s2.station_id = r.end_station_id
-""".strip()
-
-
-def make_trips_by_weekday_sql(project: str, dataset: str) -> str:
-    return f"""
-WITH base AS (
-  SELECT
-    DATE(TIMESTAMP_MILLIS(SAFE_CAST(trip_start AS INT64))) AS dt
-  FROM `{project}.{dataset}.fact_trips`
-  WHERE SAFE_CAST(trip_start AS INT64) IS NOT NULL
-    AND SAFE_CAST(trip_start AS INT64) BETWEEN 0 AND 253402300799000
-)
-SELECT FORMAT_DATE('%A', dt) AS day_of_week,
-       COUNT(*)              AS trips
-FROM base
-GROUP BY day_of_week
-""".strip()
-
-
-def make_top_routes_by_weekday_sql(project: str, dataset: str, top_n: int = 5) -> str:
-    return f"""
-WITH base AS (
-  SELECT
-    DATE(TIMESTAMP_MILLIS(SAFE_CAST(trip_start AS INT64))) AS dt,
-    start_station_name AS start_station,
-    end_station_name   AS end_station
-  FROM `{project}.{dataset}.fact_trips`
-  WHERE SAFE_CAST(trip_start AS INT64) IS NOT NULL
-    AND SAFE_CAST(trip_start AS INT64) BETWEEN 0 AND 253402300799000
-), counts AS (
-  SELECT FORMAT_DATE('%A', dt) AS day_of_week,
-         start_station,
-         end_station,
-         COUNT(*) AS trips
-  FROM base
-  GROUP BY day_of_week, start_station, end_station
-), ranked AS (
-  SELECT *, ROW_NUMBER() OVER (PARTITION BY day_of_week ORDER BY trips DESC) AS rn
-  FROM counts
-)
-SELECT day_of_week, start_station, end_station, trips
-FROM ranked
-WHERE rn <= {top_n}
-ORDER BY 
-  CASE day_of_week
-    WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2 WHEN 'Wednesday' THEN 3
-    WHEN 'Thursday' THEN 4 WHEN 'Friday' THEN 5 WHEN 'Saturday' THEN 6 WHEN 'Sunday' THEN 7
-  END, trips DESC
-""".strip()
-
-
-def make_area_flows_sql(project: str, dataset: str, limit_pairs: int = 20) -> str:
-    return f"""
-WITH base AS (
-  SELECT
-    TRIM(SPLIT(s1.station_name, ',')[SAFE_OFFSET(1)]) AS start_area,
-    TRIM(SPLIT(s2.station_name, ',')[SAFE_OFFSET(1)]) AS end_area,
-    COUNT(*) AS trips
-  FROM `{project}.{dataset}.fact_trips` f
-  JOIN `{project}.{dataset}.dim_stations` s1 ON s1.station_id = f.start_station_id
-  JOIN `{project}.{dataset}.dim_stations` s2 ON s2.station_id = f.end_station_id
-  GROUP BY start_area, end_area
-), ranked AS (
-  SELECT *, ROW_NUMBER() OVER (ORDER BY trips DESC) AS rn
-  FROM base
-)
-SELECT start_area, end_area, trips
-FROM ranked
-WHERE rn <= {limit_pairs}
-""".strip()
-
-
-def si_format(n: float) -> str:
-    """Format large numbers with K/M suffix and one decimal place."""
-    try:
-        n = float(n)
-    except Exception:
-        return str(n)
-    absn = abs(n)
-    if absn >= 1_000_000:
-        return f"{n/1_000_000:.1f}M"
-    if absn >= 1_000:
-        return f"{n/1_000:.1f}K"
-    return f"{n:.0f}"
-
-
-@st.cache_resource
-def get_client(project_id: str):
-    """Return a BigQuery client using one of several credential sources."""
-    try:
-        load_dotenv(override=False)
-    except Exception:
-        pass
-
-    creds = None
-    mode = "adc"
-    try:
-        if "gcp" in st.secrets:
-            gcp = st.secrets["gcp"]
-            if "credentials" in gcp and gcp["credentials"]:
-                try:
-                    info = gcp["credentials"]
-                    info_dict = json.loads(info) if isinstance(info, str) else dict(info)
-                    creds = service_account.Credentials.from_service_account_info(info_dict)
-                    mode = "secrets-info"
-                    if not project_id:
-                        project_id = gcp.get("project_id", project_id)
-                except Exception:
-                    pass
-            elif "key_path" in gcp and gcp["key_path"]:
-                key_path = os.fspath(gcp["key_path"])
-                if os.path.isfile(key_path):
-                    creds = service_account.Credentials.from_service_account_file(key_path)
-                    mode = "secrets-file"
-                    if not project_id:
-                        project_id = gcp.get("project_id", project_id)
-    except Exception:
-        pass
-
-    if creds is None:
-        key_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-        if key_path and os.path.isfile(key_path):
-            try:
-                creds = service_account.Credentials.from_service_account_file(key_path)
-                mode = "env-file"
-            except Exception:
-                creds = None
-
-    if creds is not None:
-        client = bigquery.Client(project=project_id, credentials=creds)
-    else:
-        client = bigquery.Client(project=project_id)
-        mode = "adc"
-
-    st.sidebar.caption(f"Auth: {mode} • Project: {project_id}")
-    return client
-
-
-@st.cache_data(ttl=600)
-def _run_query_cached(project_id: str, sql: str) -> pd.DataFrame:
-    client = get_client(project_id)
-    return client.query(sql).to_dataframe(create_bqstorage_client=False)
-
-
-def run_query(_client_or_project: Any, sql: str) -> pd.DataFrame:
-    if isinstance(_client_or_project, str):
-        project_id = _client_or_project
-    else:
-        project_id = getattr(_client_or_project, 'project', None) or \
-                     os.getenv('DSAI_PROJECT_ID') or os.getenv('GOOGLE_CLOUD_PROJECT') or ''
-    return _run_query_cached(project_id, sql)
-
-
-def main():
-    st.title("🚲 London Bikes Explorer")
-    st.caption("Visualize trips, stations, and durations from BigQuery")
-
-    default_project = os.getenv("DSAI_PROJECT_ID") or os.getenv("GOOGLE_CLOUD_PROJECT") or ""
-    project = st.sidebar.text_input("GCP Project ID", value=default_project,
-                                    help="Where your LondonBicycles dataset lives")
-    dataset = st.sidebar.text_input("Dataset", value="LondonBicycles")
-
-    if not project:
-        st.warning("Set a valid Project ID (env DSAI_PROJECT_ID).")
-        st.stop()
-
-    # Default date range: 01/01/2021 to 31/12/2022, with dataset-bounds helper
-    start_default = date(2021, 1, 1)
-    end_default = date(2022, 12, 31)
-
-    bounds_sql = f"""
-    WITH base AS (
-      SELECT DATE(TIMESTAMP_MILLIS(SAFE_CAST(trip_start AS INT64))) AS dt
-      FROM `{project}.{dataset}.fact_trips`
-      WHERE SAFE_CAST(trip_start AS INT64) IS NOT NULL
-        AND SAFE_CAST(trip_start AS INT64) BETWEEN 0 AND 253402300799000
+    # Compute monthly average per year
+    yearly_avg_df = (
+        monthly_df.groupby('year', as_index=False)['trip_count']
+        .mean()
+        .rename(columns={'trip_count': 'monthly_avg'})
     )
-    SELECT MIN(dt) AS min_dt, MAX(dt) AS max_dt FROM base
-    """.strip()
-    try:
-      bdf = run_query(project, bounds_sql)
-      min_dt = pd.to_datetime(bdf.loc[0, 'min_dt']).date() if not bdf.empty else start_default
-      max_dt = pd.to_datetime(bdf.loc[0, 'max_dt']).date() if not bdf.empty else end_default
-    except Exception:
-      min_dt, max_dt = start_default, end_default
+    monthly_df = monthly_df.merge(yearly_avg_df, on='year', how='left')
 
-    dr = st.sidebar.date_input("Date range", value=(start_default, end_default), key="date_range")
-    if isinstance(dr, tuple) and len(dr) == 2:
-        start_d, end_d = dr
+    # Create a combined period column for x-axis
+    monthly_df['period'] = pd.to_datetime(
+        monthly_df['year'].astype(str) + '-' + monthly_df['month'].astype(str) + '-01'
+    )
+
+    # Convert year to string so Plotly uses distinct colors
+    monthly_df['year'] = monthly_df['year'].astype(str)
+
+    # --- Plot ---
+    fig_monthly_bar = px.bar(
+        monthly_df,
+        x='period',
+        y='trip_count',
+        color='year',
+        title="🌈 Monthly Trips (Last 5 Years) with Yearly Average Overlay",
+        color_discrete_sequence=px.colors.qualitative.Bold,  # Vibrant colors
+        labels={'total_trips': 'Trips', 'period': 'Month', 'year': 'Year'}
+    )
+
+    # Make the bars thinner (~15 days width)
+    fig_monthly_bar.update_traces(width=15 * 24 * 60 * 60 * 1000, selector=dict(type='bar'))
+
+    # Add yearly average overlay line
+    fig_monthly_bar.add_scatter(
+        x=monthly_df['period'],
+        y=monthly_df['monthly_avg'],
+        mode='lines+markers',
+        name='Yearly Avg Trips',
+        line=dict(color='black', width=3, dash='dot'),
+        marker=dict(size=6, color='black', symbol='circle')
+    )
+
+    # Improve layout
+    fig_monthly_bar.update_layout(
+        xaxis_title="Month",
+        yaxis_title="Total Trips",
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        legend_title="Year",
+        bargap=0.25
+    )
+
+    st.plotly_chart(fig_monthly_bar, use_container_width=True)
+
+
+
+    # Derive quarter from the hourly_df
+    hourly_df['quarter'] = pd.to_datetime(hourly_df['date']).dt.quarter
+
+    # Compute average trip_count by hour and quarter
+    hourly_qtr_agg = (
+        hourly_df
+        .groupby(['quarter', 'trip_hour'], as_index=False)['trip_count']
+        .mean()
+    )
+
+    # Ensure all combinations of quarters and hours exist
+    all_combos = pd.MultiIndex.from_product([range(1, 5), range(24)], names=['quarter', 'trip_hour'])
+    hourly_qtr_agg = hourly_qtr_agg.set_index(['quarter', 'trip_hour']).reindex(all_combos).reset_index()
+    hourly_qtr_agg['trip_count'] = hourly_qtr_agg['trip_count'].fillna(0)
+
+    # Plot with color by quarter
+    fig_hourly_qtr = px.line(
+        hourly_qtr_agg,
+        x='trip_hour',
+        y='trip_count',
+        color='quarter',       # 🔹 One line per quarter
+        title="Average Hourly Trips by Quarter",
+        markers=True
+    )
+    fig_hourly_qtr.update_xaxes(dtick=1)  # show all hours on x-axis
+
+    st.plotly_chart(fig_hourly_qtr, use_container_width=True)
+
+# -----------------------------
+# Tab 2: Stations & Routes
+# -----------------------------
+with tabs[1]:
+    st.header("🏙️ Station Traffic Ranking")
+    # --- 2x2 Grid Stats ---
+    col1, col2 = st.columns(2)
+    col3, col4 = st.columns(2)
+
+    # 1. Total Stations
+    col1.metric("🏙️ Total Stations", f"{top_stations_df['station_name'].nunique():,}")
+
+    # 2. Total Areas
+    col2.metric("📍 Total Areas", f"{top_stations_df['station_area'].nunique():,}")
+
+    # 3. Top Area
+    busiest_area = (
+        top_stations_df.groupby('station_area')[['trips_started', 'trips_ended']]
+        .sum()
+    )
+    busiest_area['total_trips'] = busiest_area['trips_started'] + busiest_area['trips_ended']
+    top_area = busiest_area['total_trips'].idxmax()
+    col3.metric("🌟 Top Area", top_area)
+
+    # 4. % of Trips in Top Area
+    top_area_pct = busiest_area['total_trips'].max() / busiest_area['total_trips'].sum() * 100
+    col4.metric("📊 % Trips in Top Area", f"{top_area_pct:.1f}%")
+
+    # --- Compute total traffic (inflow + outflow) ---
+    top_stations_agg['total_traffic'] = top_stations_agg['trips_started'] + top_stations_agg['trips_ended']
+
+    # --- Compute daily average traffic ---
+    if 'date' in daily_df.columns:
+        num_days = (daily_df['date'].max() - daily_df['date'].min()).days + 1
     else:
-        start_d, end_d = start_default, dr if dr else end_default
+        num_days = len(daily_df)
 
-    direction = st.sidebar.radio("Top stations by", options=["start", "end"], horizontal=True)
-    n_top = st.sidebar.slider("Top N stations", min_value=5, max_value=30, value=15)
+    top_stations_agg['avg_daily_traffic'] = top_stations_agg['total_traffic'] / num_days
 
-    tabs = st.tabs(["Overview", "Routes", "Weekdays", "Stations & Map"])
+    # --- Slider for top N stations ---
+    top_n = st.slider("Select Top N Stations by Avg Daily Traffic", 5, 25, 10)
 
-    daily_sql = make_daily_trips_sql(project, dataset, start_d.isoformat(), end_d.isoformat())
-    df_daily = run_query(project, daily_sql)
-    if df_daily.empty:
-        st.sidebar.warning("No data in selected range. Use dataset bounds?")
-        if st.sidebar.button(f"Set to dataset range ({min_dt} → {max_dt})"):
-            st.session_state.date_range = (min_dt, max_dt)
-            st.rerun()
-    dur_sql = make_duration_hist_sql(project, dataset)
-    df_dur = run_query(project, dur_sql)
-    top_sql = make_top_stations_sql(project, dataset, n_top, direction)
-    df_top = run_query(project, top_sql)
+    # --- Pick top stations by avg daily traffic ---
+    top_traffic_stations = top_stations_agg.nlargest(top_n, 'avg_daily_traffic')
 
-    total_trips = int(df_daily["trips"].sum()) if not df_daily.empty else 0
-    avg_min = (round((df_dur["minutes_bin"] * df_dur["trips"]).sum() / df_dur["trips"].sum(), 1)
-               if not df_dur.empty and df_dur["trips"].sum() > 0 else 0)
-    top_peak = int(df_top["trips"].max() or 0) if not df_top.empty else 0
+    fig_top_avg_traffic = px.bar(
+        top_traffic_stations,
+        x='station_name',
+        y='avg_daily_traffic',
+        color='avg_daily_traffic',
+        text='avg_daily_traffic',           # add values on top of bars
+        title=f"Top {top_n} Stations by Average Daily Traffic (Inflows + Outflows)",
+        labels={'avg_daily_traffic': 'Avg Daily Traffic'},
+    )
 
-    with tabs[0]:
-        k1, k2, k3 = st.columns(3)
-        k1.metric("Total trips", si_format(total_trips))
-        k2.metric("Avg duration (min)", avg_min)
-        k3.metric(f"Top {direction} station trips", si_format(top_peak))
+    fig_top_avg_traffic.update_traces(texttemplate='%{text:.0f}', textposition='outside')
+    fig_top_avg_traffic.update_layout(yaxis_title="Average Daily Trips")
 
-        st.markdown("---")
-        c1, c2 = st.columns([2, 1])
-        with c1:
-            st.subheader("Trips over time")
-            fig = px.line(df_daily, x="dt", y="trips", markers=True)
-            fig.update_layout(height=400, margin=dict(l=20, r=20, b=40, t=40))
-            y_max = max([0] + df_daily["trips"].tolist()) if not df_daily.empty else 0
-            fig.update_yaxes(tickformat=".2s", range=[0, y_max * 1.1 if y_max else 1])
-            st.plotly_chart(fig, use_container_width=True)
-        with c2:
-            st.subheader(f"Top {n_top} {direction} stations")
-            fig2 = px.bar(df_top, x="trips", y="station", orientation="h")
-            fig2.update_layout(height=400, margin=dict(l=20, r=20, b=40, t=40))
-            fig2.update_xaxes(tickformat=".2s")
-            st.plotly_chart(fig2, use_container_width=True)
+    st.plotly_chart(fig_top_avg_traffic, use_container_width=True)
 
-        st.subheader("Duration distribution (minutes)")
-        fig3 = px.bar(df_dur, x="minutes_bin", y="trips")
-        fig3.update_layout(height=350, margin=dict(l=20, r=20, b=40, t=20))
-        fig3.update_yaxes(tickformat=".2s")
-        st.plotly_chart(fig3, use_container_width=True)
+    st.header("🗺️ Top Station Areas Map with Individual Stations & Tourist Spots")
 
-    with tabs[1]:
-        st.subheader("Most frequent routes")
-        limit_routes = st.slider("Top routes", 5, 50, 20, step=5)
-        routes_sql = make_top_routes_sql(project, dataset, limit_routes)
-        df_routes = run_query(project, routes_sql)
-        if not df_routes.empty:
-            df_routes["route"] = df_routes["start_station"] + " → " + df_routes["end_station"]
-            figr = px.bar(df_routes, x="trips", y="route", orientation="h")
-            figr.update_layout(height=600, margin=dict(l=20, r=20, b=40, t=20))
-            x_max = max([0] + df_routes["trips"].tolist())
-            figr.update_xaxes(tickformat=".2s", range=[0, x_max * 1.1 if x_max else 1])
-            st.plotly_chart(figr, use_container_width=True)
-            st.dataframe(df_routes, use_container_width=True)
-        else:
-            st.info("No route data to display.")
+    # Slider for top N areas
+    top_area_n = st.slider("Top N Areas to Highlight", 1, 10, 5)
 
-        st.markdown("---")
-        st.subheader("Top routes on the map")
-        map_limit = st.slider("Routes on map", 5, 25, 10)
-        rmap_sql = make_top_routes_map_sql(project, dataset, map_limit)
-        df_rmap = run_query(project, rmap_sql)
-        if not df_rmap.empty:
-            import plotly.graph_objects as go
-            figm = go.Figure()
-            for _, row in df_rmap.iterrows():
-                figm.add_trace(go.Scattermapbox(
-                    lat=[row["start_lat"], row["end_lat"]],
-                    lon=[row["start_lon"], row["end_lon"]],
-                    mode="lines+markers",
-                    line=dict(width=2),
-                    marker=dict(size=6),
-                    name=f"{row['start_station']} → {row['end_station']} ({si_format(row['trips'])})",
-                    hoverinfo="name",
-                ))
-            figm.update_layout(mapbox_style="open-street-map", mapbox_zoom=10,
-                               mapbox_center={"lat": float(df_rmap["start_lat"].mean()), "lon": float(df_rmap["start_lon"].mean())},
-                               height=500, margin=dict(l=10, r=10, b=10, t=10))
-            st.plotly_chart(figm, use_container_width=True)
-        else:
-            st.info("No route map data available.")
+    # Compute total trips per station
+    top_stations_df['total_trips'] = top_stations_df['trips_started'] + top_stations_df['trips_ended']
 
-        st.markdown("---")
-        st.subheader("Top area-to-area flows")
-        pair_limit = st.slider("Top area pairs", 10, 100, 30, step=10)
-        df_area = run_query(project, make_area_flows_sql(project, dataset, pair_limit))
-        if not df_area.empty:
-            top_areas: List[str] = sorted(set(df_area["start_area"]).union(df_area["end_area"]))[:15]
-            piv = df_area[df_area["start_area"].isin(top_areas) & df_area["end_area"].isin(top_areas)] \
-                .pivot_table(index="start_area", columns="end_area", values="trips", aggfunc="sum", fill_value=0)
-            figh = px.imshow(piv, color_continuous_scale="viridis", aspect="auto")
-            figh.update_layout(height=500, margin=dict(l=20, r=20, b=40, t=40))
-            st.plotly_chart(figh, use_container_width=True)
-            with st.expander("Show table"):
-                st.dataframe(df_area, use_container_width=True)
-        else:
-            st.info("No area flow data available.")
+    # Aggregate total trips per area and pick top N areas
+    area_agg = (
+        top_stations_df.groupby('station_area')['total_trips'].sum().reset_index()
+        .sort_values('total_trips', ascending=False)
+        .head(top_area_n)
+    )
 
-    with tabs[2]:
-        st.subheader("Trips by weekday")
-        wsql = make_trips_by_weekday_sql(project, dataset)
-        df_wd = run_query(project, wsql)
-        if not df_wd.empty:
-            order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-            df_wd["day_of_week"] = pd.Categorical(df_wd["day_of_week"], categories=order, ordered=True)
-            df_wd = df_wd.sort_values("day_of_week")
-            figw = px.bar(df_wd, x="day_of_week", y="trips")
-            y_maxw = max([0] + df_wd["trips"].tolist())
-            figw.update_yaxes(tickformat=".2s", range=[0, y_maxw * 1.1 if y_maxw else 1])
-            st.plotly_chart(figw, use_container_width=True)
-        else:
-            st.info("No weekday data.")
+    # Assign letters based on ranking
+    area_agg['area_letter'] = [chr(65+i) for i in range(len(area_agg))]
+    area_letter_map = dict(zip(area_agg['station_area'], area_agg['area_letter']))
 
-        st.markdown("---")
-        st.subheader("Top routes per weekday")
-        df_wr = run_query(project, make_top_routes_by_weekday_sql(project, dataset, top_n=5))
-        if not df_wr.empty:
-            day = st.selectbox("Select day", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], index=0)
-            sdf = df_wr[df_wr["day_of_week"] == day]
-            sdf["route"] = sdf["start_station"] + " → " + sdf["end_station"]
-            figwr = px.bar(sdf, x="trips", y="route", orientation="h")
-            x_max2 = max([0] + sdf["trips"].tolist()) if not sdf.empty else 0
-            figwr.update_xaxes(tickformat=".2s", range=[0, x_max2 * 1.1 if x_max2 else 1])
-            st.plotly_chart(figwr, use_container_width=True)
-            with st.expander("Show table"):
-                st.dataframe(sdf, use_container_width=True)
-        else:
-            st.info("No per-weekday route data.")
+    # Filter stations belonging to top N areas
+    stations_in_top_areas = top_stations_df[top_stations_df['station_area'].isin(area_agg['station_area'])]
 
-    with tabs[3]:
-        st.subheader("Stations map and net flows")
-        st.caption("Bubble size ~ trips (start station)")
-        stn_sql = make_dim_stations_sql(project, dataset)
-        df_stn = run_query(project, stn_sql)
-        if not df_stn.empty and not df_top.empty:
-            df_top_start = run_query(project, make_top_stations_sql(project, dataset, n=50, direction="start"))
-            merged = df_top_start.merge(df_stn, left_on="station", right_on="station_name", how="left")
-            merged = merged.dropna(subset=["latitude", "longitude"])
-            fig4 = px.scatter_mapbox(
-                merged,
-                lat="latitude",
-                lon="longitude",
-                size="trips",
-                color="trips",
-                hover_name="station",
-                zoom=10,
-                height=450,
-                color_continuous_scale="viridis",
-                size_max=35,
-            )
-            fig4.update_layout(mapbox_style="open-street-map", margin=dict(l=10, r=10, b=10, t=10))
-            st.plotly_chart(fig4, use_container_width=True)
-        else:
-            st.info("No station data available yet.")
+    # Keep only top 5 stations per area
+    stations_in_top_areas = stations_in_top_areas.sort_values(['station_area', 'total_trips'], ascending=[True, False])
+    stations_in_top_areas = stations_in_top_areas.groupby('station_area').head(5)
+
+    # Map color per area
+    area_colors = px.colors.qualitative.Set1
+    area_unique = stations_in_top_areas['station_area'].unique()
+    area_color_map = {area: area_colors[i % len(area_colors)] for i, area in enumerate(area_unique)}
+
+    # Add area letters to stations
+    stations_in_top_areas['area_letter'] = stations_in_top_areas['station_area'].map(area_letter_map)
+
+    # Top 8 tourist destinations in London
+    tourist_df = pd.DataFrame({
+        'name': [
+            'London Eye', 'British Museum', 'Tower of London', 'Buckingham Palace',
+            'Big Ben', 'Trafalgar Square', "St Paul's Cathedral", 'Natural History Museum'
+        ],
+        'latitude': [51.5033, 51.5194, 51.5081, 51.5014, 51.5007, 51.5080, 51.5138, 51.4967],
+        'longitude': [-0.1195, -0.1270, -0.0759, -0.1419, -0.1246, -0.1281, -0.0984, -0.1764]
+    })
+    tourist_df['number'] = range(1, len(tourist_df)+1)
+
+    # Create figure
+    fig_map = go.Figure()
+
+    # Add stations: one trace per area
+    for area in area_agg['station_area']:
+        area_stations = stations_in_top_areas[stations_in_top_areas['station_area'] == area]
+        fig_map.add_trace(go.Scattermapbox(
+            lat=area_stations['latitude'],
+            lon=area_stations['longitude'],
+            mode='markers+text',
+            marker=dict(
+                size=area_stations['total_trips'] / area_stations['total_trips'].max() * 40 + 5,
+                color=area_color_map[area]
+            ),
+            text=area_stations['area_letter'],       # show A/B/C inside bubble
+            textposition='middle center',
+            name=f"Area {area_letter_map[area]}: {area}",
+            hovertext=area_stations['station_name'],  # station name in hover
+            hoverinfo='text'
+        ))
+
+    # Add tourist spots with black bubbles, numbered
+    fig_map.add_trace(go.Scattermapbox(
+        lat=tourist_df['latitude'],
+        lon=tourist_df['longitude'],
+        mode='markers+text',
+        marker=dict(size=14, color='black'),
+        text=tourist_df['number'].astype(str),
+        textposition='middle center',
+        name='Tourist Spot',
+        hovertext=tourist_df['name'],
+        hoverinfo='text'
+    ))
+
+    # Map layout
+    fig_map.update_layout(
+        mapbox_style="open-street-map",
+        mapbox_zoom=12,
+        mapbox_center={"lat": stations_in_top_areas['latitude'].mean(),
+                    "lon": stations_in_top_areas['longitude'].mean()},
+        height=650,
+        margin={"r":0,"t":30,"l":0,"b":0},
+        legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01)
+    )
+    st.plotly_chart(fig_map, use_container_width=True)
+
+    # Tourist spot legend below map
+    tourist_legend_text = "<br>".join([f"{num}. {name}" for num, name in zip(tourist_df['number'], tourist_df['name'])])
+    st.markdown(f"**Tourist Spots Legend:**<br>{tourist_legend_text}", unsafe_allow_html=True)
 
 
-if __name__ == "__main__":
-    main()
+    # -----------------------------
+    # Heatmap: Top Start & End Routes by Hour
+    # -----------------------------
+    st.header("🔥 Top Start-End Routes Heatmap by Hour")
 
+    # Hour filter dropdown
+    selected_hour_1 = st.selectbox(
+        "Select Hour to Analyze",
+        options=list(range(24)),
+        index=8,  # default 8 AM
+        key="heatmap_hour",  # unique key for this selectbox
+        format_func=lambda x: f"{x}:00 - {x}:59"
+    )
+
+    # Filter route_df by selected hour
+    route_hour_df = route_df[route_df['trip_hour'] == selected_hour_1]
+
+    # Compute total trips per start and end station
+    route_agg = route_hour_df.groupby(['start_station_name', 'end_station_name'])['trip_count'].sum().reset_index()
+
+    # Pick top 10 start stations by total trips
+    top_start_stations = (
+        route_agg.groupby('start_station_name')['trip_count'].sum()
+        .nlargest(10)
+        .index
+    )
+
+    # Pick top 10 end stations by total trips
+    top_end_stations = (
+        route_agg.groupby('end_station_name')['trip_count'].sum()
+        .nlargest(10)
+        .index
+    )
+
+    # Filter the data
+    route_heatmap_df = route_agg[
+        route_agg['start_station_name'].isin(top_start_stations) &
+        route_agg['end_station_name'].isin(top_end_stations)
+    ]
+
+    # Create pivot table for heatmap
+    heatmap_data = route_heatmap_df.pivot(index='start_station_name', columns='end_station_name', values='trip_count').fillna(0)
+
+    # Plot heatmap
+    fig_heatmap = px.imshow(
+        heatmap_data,
+        text_auto=True,
+        aspect="auto",
+        color_continuous_scale='Viridis',
+        labels=dict(x="End Station", y="Start Station", color="Trips"),
+        title=f"Top Start-End Station Trip Counts (Hour {selected_hour_1}:00)"
+    )
+
+    st.plotly_chart(fig_heatmap, use_container_width=True)
+
+# -----------------------------
+# Tab 3: Trip Duration & Return
+# -----------------------------
+with tabs[2]:
+
+    st.header("⏱️ Trip Duration & Return to Origin Analysis")
+
+    # Filter duration <= 60 min
+    duration_df_filtered = hourly_df.copy()
+    duration_df_filtered['duration_min'] = duration_df_filtered['avg_duration_minutes']
+    duration_df_filtered = duration_df_filtered[(duration_df_filtered['duration_min'] > 0) &
+                                                (duration_df_filtered['duration_min'] <= 60)]
+
+    # --- Key Metrics ---
+    pct_below_30 = (duration_df_filtered['duration_min'] <= 30).mean() * 100
+    yearly_avg_duration = duration_df_filtered.groupby('year')['duration_min'].mean().reset_index()
+    top_year_row = yearly_avg_duration.loc[yearly_avg_duration['duration_min'].idxmax()]
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("% Trips ≤30 min", f"{pct_below_30:.1f}%")
+    col2.metric("Year with Top Avg Duration", f"{int(top_year_row['year'])}")
+    col3.metric("Top Yearly Avg Duration (min)", f"{top_year_row['duration_min']:.1f}")
+
+    # -----------------------------
+    # Duration Bands Bar Chart with Correct %
+    # -----------------------------
+    # Define duration bands
+    bins = [0, 5, 15, 30, 45, 60, float('inf')]
+    labels = ['Under 5 min', '5-15 min', '15-30 min', '30-45 min', '45-60 min', 'Over 60 min']
+
+    # Bin the durations
+    duration_df_filtered['duration_band'] = pd.cut(
+        duration_df_filtered['duration_min'],
+        bins=bins,
+        labels=labels,
+        right=True
+    )
+
+    # Compute counts per band
+    duration_band_df = (
+        duration_df_filtered.groupby('duration_band')
+        .size()
+        .reset_index(name='trip_count')
+    )
+
+    # Compute % for each band
+    duration_band_df['pct'] = (duration_band_df['trip_count'] / duration_band_df['trip_count'].sum() * 100).round(1)
+
+    # Create bar chart
+    fig_duration_band = px.bar(
+        duration_band_df,
+        x='duration_band',
+        y='trip_count',
+        color='duration_band',
+        color_discrete_sequence=px.colors.sequential.Plasma_r,
+        title='Trip Duration Distribution by Band',
+        category_orders={'duration_band': labels},
+        text='pct'
+    )
+
+    # Add % labels on top
+    fig_duration_band.update_traces(
+        texttemplate='%{text}%', 
+        textposition='outside'
+    )
+
+    # Increase top margin
+    fig_duration_band.update_layout(
+        yaxis_title='Trip Count',
+        margin=dict(t=80, b=40, l=60, r=40)
+    )
+
+    st.plotly_chart(fig_duration_band, use_container_width=True)
+
+    # --- Violin Plot with improved colors ---
+    fig_violin = px.violin(
+        duration_df_filtered,
+        y='duration_min',
+        box=True,
+        points='all',
+        color_discrete_sequence=['#636EFA'],  # Blue color
+        title="Trip Duration Distribution (Violin Plot, <= 60 min)",
+        labels={'duration_min': 'Trip Duration (minutes)'}
+    )
+    fig_violin.update_traces(meanline_visible=True)
+    st.plotly_chart(fig_violin, use_container_width=True)
+
+    # --- Hour-of-Day vs Avg Duration ---
+    hourly_avg = duration_df_filtered.groupby('trip_hour')['duration_min'].mean().reset_index()
+    fig_hourly = px.line(
+        hourly_avg,
+        x='trip_hour',
+        y='duration_min',
+        markers=True,
+        title='Average Trip Duration by Hour of Day',
+        labels={'trip_hour': 'Hour of Day', 'duration_min': 'Avg Trip Duration (min)'},
+        color_discrete_sequence=['#EF553B']
+    )
+    st.plotly_chart(fig_hourly, use_container_width=True)
+
+
+
+# =============================
+# TAB 4: Hourly Inflow/Outflow Utilization (Last 12 Months)
+# =============================
+with tabs[3]:
+    st.header("⏱️ Hourly Inflow/Outflow Utilization (Last 12 Months)")
+
+    # -----------------------------
+    # Filter last 12 months
+    # -----------------------------
+    route_df['year_month'] = route_df['year']*100 + route_df['month']
+    last_12_ym = sorted(route_df['year_month'].unique())[-12:]
+    route_12m_df = route_df[route_df['year_month'].isin(last_12_ym)]
+
+    # -----------------------------
+    # Select Hour Filter
+    # -----------------------------
+    selected_hour = st.selectbox(
+        "Select Hour to Analyze",
+        options=list(range(24)),
+        index=8,  # default 8 AM
+        format_func=lambda x: f"{x}:00 - {x}:59"
+    )
+
+    # -----------------------------
+    # Compute inflow per station per day/hour
+    # -----------------------------
+    inflow_df = (
+        route_12m_df.groupby(['end_station_name', 'year', 'month', 'day', 'trip_hour'], as_index=False)
+        ['trip_count'].sum()
+        .rename(columns={'end_station_name': 'station_name', 'trip_count': 'inflow'})
+    )
+
+    # -----------------------------
+    # Compute outflow per station per day/hour
+    # -----------------------------
+    outflow_df = (
+        route_12m_df.groupby(['start_station_name', 'year', 'month', 'day', 'trip_hour'], as_index=False)
+        ['trip_count'].sum()
+        .rename(columns={'start_station_name': 'station_name', 'trip_count': 'outflow'})
+    )
+
+    # -----------------------------
+    # Strip station names
+    # -----------------------------
+    inflow_df['station_name'] = inflow_df['station_name'].str.strip()
+    outflow_df['station_name'] = outflow_df['station_name'].str.strip()
+    station_static['station_name'] = station_static['station_name'].str.strip()
+
+    # -----------------------------
+    # Merge inflow + outflow per station/day/hour
+    # -----------------------------
+    hourly_net_df = pd.merge(
+        inflow_df,
+        outflow_df,
+        on=['station_name', 'year', 'month', 'day', 'trip_hour'],
+        how='outer'
+    ).fillna(0)
+
+    # Filter by selected hour
+    hourly_net_df = hourly_net_df[hourly_net_df['trip_hour'] == selected_hour]
+
+    # Compute net flow per station/hour/day
+    hourly_net_df['net_flow'] = hourly_net_df['inflow'] - hourly_net_df['outflow']
+
+    # -----------------------------
+    # Aggregate over all days → average for selected hour
+    # -----------------------------
+    station_metrics = hourly_net_df.groupby('station_name').agg(
+        avg_hourly_inflow=('inflow', 'mean'),
+        avg_hourly_outflow=('outflow', 'mean'),
+        avg_hourly_net=('net_flow', 'mean')
+    ).reset_index()
+
+    # Merge docks_count from station_static
+    station_metrics = station_metrics.merge(
+        station_static[['station_name', 'docks_count']],
+        on='station_name', how='left'
+    )
+
+    # Exclude stations with 0 docks
+    station_metrics = station_metrics[station_metrics['docks_count'] > 0]
+
+    # -----------------------------
+    # Compute utilization per dock
+    # -----------------------------
+    station_metrics['utilization_net'] = station_metrics['avg_hourly_net'] / station_metrics['docks_count']
+    station_metrics['utilization_inflow'] = station_metrics['avg_hourly_inflow'] / station_metrics['docks_count']
+    station_metrics['utilization_outflow'] = station_metrics['avg_hourly_outflow'] / station_metrics['docks_count']
+    station_metrics['utilization_total'] = (
+        station_metrics['avg_hourly_inflow'] + station_metrics['avg_hourly_outflow']
+    ) / station_metrics['docks_count']
+
+    # -----------------------------
+    # Slider: top N stations
+    # -----------------------------
+    top_n = st.slider("Top N Stations", 5, 20, 10)
+
+    # -----------------------------
+    # Graph 1: Top Net Utilization
+    # -----------------------------
+    top_imbalance = station_metrics.reindex(
+        station_metrics['utilization_net'].abs().sort_values(ascending=False).index
+    ).head(top_n)
+
+    # Add station label with docks
+    top_imbalance['station_label'] = top_imbalance.apply(
+        lambda x: f"{x['station_name']} ({x['docks_count']} docks)",
+        axis=1
+    )
+
+    fig_imbalance = px.bar(
+        top_imbalance,
+        x='station_label',
+        y='utilization_net',
+        color='utilization_net',
+        color_continuous_scale=px.colors.sequential.RdBu,
+        title=f"Top {top_n} Stations by Net Utilization (Hour {selected_hour}:00)",
+        labels={'utilization_net': 'Net Utilization (per dock)'},
+    )
+    st.plotly_chart(fig_imbalance, use_container_width=True)
+
+    # Add business explanation
+    st.markdown("""
+    **Interpretation: Net Utilization per Dock**  
+    - Positive values → More bikes coming in than leaving → station fills up quickly, may run out of space.  
+    - Negative values → More bikes leaving than coming in → station empties quickly, may run out of bikes.  
+    - High absolute values → extreme imbalance; consider prioritizing these stations for **rebalancing** or **dock adjustments**.
+    """)
+
+    # -----------------------------
+    # Graph 2: Top Total Traffic Utilization
+    # -----------------------------
+    top_traffic = station_metrics.nlargest(top_n, 'utilization_total')
+
+    # Add station label with docks
+    top_traffic['station_label'] = top_traffic.apply(
+        lambda x: f"{x['station_name']} ({x['docks_count']} docks)",
+        axis=1
+    )
+
+    fig_traffic = px.bar(
+        top_traffic,
+        x='station_label',
+        y='utilization_total',
+        color='utilization_total',
+        color_continuous_scale=px.colors.sequential.Viridis,
+        title=f"Top {top_n} Stations by Total Traffic Utilization (Hour {selected_hour}:00)",
+        labels={'utilization_total': 'Total Utilization (per dock)'},
+    )
+    st.plotly_chart(fig_traffic, use_container_width=True)
+
+    # Add business explanation
+    st.markdown("""
+    **Interpretation: Total Traffic Utilization per Dock**  
+    - Measures the intensity of activity relative to dock capacity, ignoring direction.  
+    - High values → very busy stations; may require **maintenance, staffing, or dock expansion**.  
+    - Compare with net utilization to determine if a station is both busy and imbalanced during peak hours.
+    """)
