@@ -42,7 +42,22 @@ bqstorage_client = bigquery_storage.BigQueryReadClient()
 
 @st.cache_data(show_spinner=True)
 def load_table(table_name, last_12_months_only=False):
-    query = f"SELECT * FROM `{project_id}.{analytics_dataset}.{table_name}`"
+    if table_name == "route_popularity":
+        # Only load the columns Tab 4 actually needs
+        query = f"""
+        SELECT
+          year,
+          month,
+          day,
+          trip_hour,
+          start_station_name,
+          end_station_name,
+          trip_count
+        FROM `{project_id}.{analytics_dataset}.{table_name}`
+        """
+    else:
+        query = f"SELECT * FROM `{project_id}.{analytics_dataset}.{table_name}`"
+
     return client.query(query).to_dataframe()
 
 # -----------------------------
@@ -71,24 +86,86 @@ supply_latest_year = supply_demand_df[supply_demand_df['year']==latest_year -1]
 # -----------------------------
 tabs = st.tabs(["Overall Trends", "Stations & Routes", "Trip Duration & Return", "Supply & Net Inflow"])
 
-# -----------------------------
-# Tab 1: Overall Trends
-# -----------------------------
 with tabs[0]:
     st.header("📊 Overall Trend Analysis")
+
+    # ---------------------------
+    # Precompute yearly aggregates
+    # ---------------------------
+    yearly_trips = daily_df.groupby('year')['trip_count'].sum().reset_index()
+    yearly_duration = daily_df.groupby('year')['avg_duration_minutes'].mean().reset_index()
+
+    # ---------------------------
+    # Identify latest full year
+    # ---------------------------
+    months_per_year = daily_df.groupby('year')['month'].nunique()
+    full_years = months_per_year[months_per_year == 12].index.tolist()
+    if len(full_years) > 0:
+        latest_full_year = max(full_years)
+    else:
+        latest_full_year = daily_df['year'].min()  # fallback
+    prev_year = latest_full_year - 1
+
+    # ---------------------------
+    # Compute metrics
+    # ---------------------------
+    # 1. Average trips per year
+    avg_trips_per_year = yearly_trips['trip_count'].mean()
+
+    # 2. Trips last full year + % change from previous full year
+    trips_last_year = yearly_trips.loc[yearly_trips['year'] == latest_full_year, 'trip_count'].values[0]
+    trips_prev_year = yearly_trips.loc[yearly_trips['year'] == prev_year, 'trip_count'].values[0] if prev_year in yearly_trips['year'].values else None
+    trips_change = (trips_last_year - trips_prev_year) / trips_prev_year * 100 if trips_prev_year else None
+
+    # 3. Average duration (all data)
+    avg_duration = daily_df['avg_duration_minutes'].mean()
+
+    # 4. Latest full year duration + change from previous full year
+    latest_duration = yearly_duration.loc[yearly_duration['year'] == latest_full_year, 'avg_duration_minutes'].values[0]
+    prev_duration = yearly_duration.loc[yearly_duration['year'] == prev_year, 'avg_duration_minutes'].values[0] if prev_year in yearly_duration['year'].values else None
+    duration_change = (latest_duration - prev_duration) if prev_duration else None
+
+    # 5. Year with max trips + total trips
+    year_max_trips_row = yearly_trips.loc[yearly_trips['trip_count'].idxmax()]
+    year_max_trips = year_max_trips_row['year']
+    total_trips_max_year = year_max_trips_row['trip_count']
+
+    # 6. Maximum average duration + year
+    year_max_duration_row = yearly_duration.loc[yearly_duration['avg_duration_minutes'].idxmax()]
+    max_avg_duration = year_max_duration_row['avg_duration_minutes']
+    year_max_avg_duration = year_max_duration_row['year']
+
+    # ---------------------------
+    # Display metrics in columns
+    # ---------------------------
     col1, col2, col3 = st.columns(3)
+    col4, col5, col6 = st.columns(3)
 
-    # Compute average trips per year
-    avg_trips_per_year = daily_df.groupby('year')['trip_count'].sum().mean()
     col1.metric("Average Trips per Year", f"{avg_trips_per_year:,.0f}")
+    col2.metric(
+        f"Trips in {latest_full_year}",
+        f"{trips_last_year:,}",
+        f"{trips_change:+.1f}%" if trips_change is not None else "N/A"
+    )
+    col3.metric(
+        f"Year with Max Trips",
+        f"{year_max_trips}",
+        f"{total_trips_max_year:,} trips"
+    )
 
-    col2.metric("Avg Duration (min)", f"{daily_df['avg_duration_minutes'].mean():.2f}")
+    col4.metric("Average Duration (min) - across years", f"{avg_duration:.2f}")
+    
+    col5.metric(
+        f"Avg Duration in {latest_full_year}",
+        f"{latest_duration:.2f}",
+        f"{duration_change:+.2f}" if duration_change is not None else "N/A"
+    )
 
-
-    # Compute year with maximum total trips
-    year_max_trips = daily_df.groupby('year')['trip_count'].sum().idxmax()
-    total_trips_max_year = daily_df.groupby('year')['trip_count'].sum().max()
-    col3.metric("Year with Max Trips", f"{year_max_trips}", f"{total_trips_max_year:,} trips")
+    col6.metric(
+        f"Max Avg Duration",
+        f"{max_avg_duration:.2f} min",
+        f"Year: {year_max_avg_duration}"
+    )
 
 
     # Prepare monthly data
@@ -183,33 +260,74 @@ with tabs[0]:
 
     st.plotly_chart(fig_hourly_qtr, use_container_width=True)
 
+
 # -----------------------------
 # Tab 2: Stations & Routes
 # -----------------------------
 with tabs[1]:
-    st.header("🏙️ Station Traffic Ranking")
-    # --- 2x2 Grid Stats ---
-    col1, col2 = st.columns(2)
-    col3, col4 = st.columns(2)
+    st.header("🏙️ Station Traffic & Usage Metrics")
 
-    # 1. Total Stations
-    col1.metric("🏙️ Total Stations", f"{top_stations_df['station_name'].nunique():,}")
+    # --- Preprocessing ---
+    station_static['station_name'] = station_static['station_name'].str.strip()
+    top_stations_df['station_name'] = top_stations_df['station_name'].str.strip()
 
-    # 2. Total Areas
-    col2.metric("📍 Total Areas", f"{top_stations_df['station_area'].nunique():,}")
+    # Exclude stations without docks
+    station_metrics = station_static[station_static['docks_count'] > 0].copy()
 
-    # 3. Top Area
-    busiest_area = (
-        top_stations_df.groupby('station_area')[['trips_started', 'trips_ended']]
-        .sum()
-    )
-    busiest_area['total_trips'] = busiest_area['trips_started'] + busiest_area['trips_ended']
-    top_area = busiest_area['total_trips'].idxmax()
-    col3.metric("🌟 Top Area", top_area)
+    # Compute inflow + outflow per station
+    station_traffic = top_stations_df.groupby('station_name')[['trips_started', 'trips_ended']].sum()
+    station_traffic['total_trips'] = station_traffic['trips_started'] + station_traffic['trips_ended']
 
-    # 4. % of Trips in Top Area
-    top_area_pct = busiest_area['total_trips'].max() / busiest_area['total_trips'].sum() * 100
-    col4.metric("📊 % Trips in Top Area", f"{top_area_pct:.1f}%")
+    # Merge with station_static for docks info
+    station_metrics = station_metrics.merge(
+        station_traffic[['total_trips']],
+        on='station_name',
+        how='left'
+    ).fillna(0)
+
+    # -----------------------------
+    # Compute Metrics
+    # -----------------------------
+    # 1. Total stations
+    total_stations = station_metrics['station_name'].nunique()
+
+    # 2. Total docks
+    total_docks = station_metrics['docks_count'].sum()
+
+    # 3. Average docks per station
+    avg_docks_per_station = station_metrics['docks_count'].mean()
+
+    # 4. Top area (by total trips)
+    top_area_row = top_stations_df.groupby('station_area')[['trips_started', 'trips_ended']].sum()
+    top_area_row['total_trips'] = top_area_row['trips_started'] + top_area_row['trips_ended']
+    top_area = top_area_row['total_trips'].idxmax()
+
+    # 5 & 6. Top station & average daily trips
+    # Compute number of years in the data
+    num_years = top_stations_df['year'].nunique()
+
+    # Compute average daily trips per station (only for stations with docks)
+    station_metrics['avg_daily_trips'] = station_metrics['total_trips'] / (num_years * 365)
+
+    # Get top station by avg daily trips
+    top_station_row = station_metrics.loc[station_metrics['avg_daily_trips'].idxmax()]
+    top_station_name = top_station_row['station_name']
+    avg_trip_per_day_top_station = top_station_row['avg_daily_trips']
+
+    # -----------------------------
+    # Display Metrics: 2 rows x 3 columns
+    # -----------------------------
+    col1, col2, col3 = st.columns(3)
+    col4, col5, col6 = st.columns(3)
+
+    col1.metric("🏙️ Total Stations", f"{total_stations:,}")
+    col2.metric("🛠️ Total Docks", f"{total_docks:,}")
+
+    col3.metric("⚖️ Avg Docks per Station", f"{avg_docks_per_station:.1f}")
+    col4.metric("🌟 Top Area", top_area)
+
+    col5.metric("🏁 Top Station", top_station_name)
+    col6.metric("📊 Avg Trips/Day at Top Station", f"{avg_trip_per_day_top_station:.1f}")
 
     # --- Compute total traffic (inflow + outflow) ---
     top_stations_agg['total_traffic'] = top_stations_agg['trips_started'] + top_stations_agg['trips_ended']
@@ -239,7 +357,8 @@ with tabs[1]:
     )
 
     fig_top_avg_traffic.update_traces(texttemplate='%{text:.0f}', textposition='outside')
-    fig_top_avg_traffic.update_layout(yaxis_title="Average Daily Trips")
+    fig_top_avg_traffic.update_layout(yaxis_title="Average Daily Trips", margin=dict(t=100, b=40, l=60, r=40)  # increase t (top) from default 80→100
+)
 
     st.plotly_chart(fig_top_avg_traffic, use_container_width=True)
 
@@ -407,15 +526,66 @@ with tabs[2]:
     duration_df_filtered = duration_df_filtered[(duration_df_filtered['duration_min'] > 0) &
                                                 (duration_df_filtered['duration_min'] <= 60)]
 
-    # --- Key Metrics ---
-    pct_below_30 = (duration_df_filtered['duration_min'] <= 30).mean() * 100
-    yearly_avg_duration = duration_df_filtered.groupby('year')['duration_min'].mean().reset_index()
-    top_year_row = yearly_avg_duration.loc[yearly_avg_duration['duration_min'].idxmax()]
+    # --- Determine the latest full year dynamically ---
+    year_counts = duration_df_filtered.groupby('year')['month'].nunique()
+    full_years = year_counts[year_counts == 12].index  # Only years with all 12 months
+    latest_full_year = full_years.max()
+    prev_full_year = latest_full_year - 1
 
-    col1, col2, col3 = st.columns(3)
+    # --- Row 1: % Trips <=30 min ---
+    pct_below_30 = (duration_df_filtered['duration_min'] <= 30).mean() * 100
+
+    # --- Row 2: % Trips >30 min in latest full year and comparison ---
+    latest_year_df = duration_df_filtered[duration_df_filtered['year'] == latest_full_year]
+    prev_year_df = duration_df_filtered[duration_df_filtered['year'] == prev_full_year]
+
+    pct_above_30_latest = (latest_year_df['duration_min'] > 30).mean() * 100
+    pct_above_30_prev = (prev_year_df['duration_min'] > 30).mean() * 100
+    pct_above_30_change = pct_above_30_latest - pct_above_30_prev
+
+    # --- Row 3: Median duration across all years ---
+    median_all_years = duration_df_filtered['duration_min'].median()
+
+    # --- Row 4: Median duration in latest full year ---
+    median_latest_year = latest_year_df['duration_min'].median()
+
+    # --- Row 1 Metrics ---
+    col1, col2 = st.columns(2)
     col1.metric("% Trips ≤30 min", f"{pct_below_30:.1f}%")
-    col2.metric("Year with Top Avg Duration", f"{int(top_year_row['year'])}")
-    col3.metric("Top Yearly Avg Duration (min)", f"{top_year_row['duration_min']:.1f}")
+    col2.metric(
+        label=f"% Trips >30 min (Latest Full Year {latest_full_year})",
+        value=f"{pct_above_30_latest:.1f}%",
+        delta=f"{pct_above_30_change:+.1f}%",  # Streamlit will show red if negative
+        delta_color="normal"  # default: positive→green, negative→red
+    )
+
+    # --- Row 2 Metrics ---
+    col3, col4 = st.columns(2)
+    col3.metric("Median Trip Duration (All Years)", f"{median_all_years:.1f} min")
+    col4.metric(f"Median Trip Duration ({latest_full_year})", f"{median_latest_year:.1f} min")
+
+    # -----------------------------
+    # Year Filter for Duration Bands
+    # -----------------------------
+    # Get unique years sorted
+    available_years = sorted(duration_df_filtered['year'].unique())
+    available_years_str = [str(y) for y in available_years]
+
+    # Add "All" option at the top
+    year_options = ["All"] + available_years_str
+
+    # Selectbox for year
+    selected_year = st.selectbox(
+        "Select Year for Duration Bands",
+        options=year_options,
+        index=0  # default = "All"
+    )
+
+    # Filter data based on selected year
+    if selected_year != "All":
+        duration_band_data = duration_df_filtered[duration_df_filtered['year'] == int(selected_year)]
+    else:
+        duration_band_data = duration_df_filtered.copy()
 
     # -----------------------------
     # Duration Bands Bar Chart with Correct %
@@ -425,8 +595,8 @@ with tabs[2]:
     labels = ['Under 5 min', '5-15 min', '15-30 min', '30-45 min', '45-60 min', 'Over 60 min']
 
     # Bin the durations
-    duration_df_filtered['duration_band'] = pd.cut(
-        duration_df_filtered['duration_min'],
+    duration_band_data['duration_band'] = pd.cut(
+        duration_band_data['duration_min'],
         bins=bins,
         labels=labels,
         right=True
@@ -434,7 +604,7 @@ with tabs[2]:
 
     # Compute counts per band
     duration_band_df = (
-        duration_df_filtered.groupby('duration_band')
+        duration_band_data.groupby('duration_band')
         .size()
         .reset_index(name='trip_count')
     )
@@ -448,8 +618,8 @@ with tabs[2]:
         x='duration_band',
         y='trip_count',
         color='duration_band',
-        color_discrete_sequence=px.colors.sequential.Plasma_r,
-        title='Trip Duration Distribution by Band',
+        color_discrete_sequence=px.colors.sequential.Turbo,
+        title=f'Trip Duration Distribution by Band ({selected_year})',
         category_orders={'duration_band': labels},
         text='pct'
     )
@@ -468,17 +638,25 @@ with tabs[2]:
 
     st.plotly_chart(fig_duration_band, use_container_width=True)
 
-    # --- Violin Plot with improved colors ---
+    # --- Violin Plot with improved colors and taller layout ---
     fig_violin = px.violin(
         duration_df_filtered,
         y='duration_min',
         box=True,
         points='all',
-        color_discrete_sequence=['#636EFA'],  # Blue color
+        color_discrete_sequence=['#FF6F3C'],  # Orange/Maroon-ish
         title="Trip Duration Distribution (Violin Plot, <= 60 min)",
         labels={'duration_min': 'Trip Duration (minutes)'}
     )
+
+    # Show mean line
     fig_violin.update_traces(meanline_visible=True)
+
+    # Increase height to spread out scatter points
+    fig_violin.update_layout(
+        height=1000  # increase height in pixels
+    )
+
     st.plotly_chart(fig_violin, use_container_width=True)
 
     # --- Hour-of-Day vs Avg Duration ---
@@ -490,7 +668,7 @@ with tabs[2]:
         markers=True,
         title='Average Trip Duration by Hour of Day',
         labels={'trip_hour': 'Hour of Day', 'duration_min': 'Avg Trip Duration (min)'},
-        color_discrete_sequence=['#EF553B']
+        color_discrete_sequence=['#FF0000']  # Red color
     )
     st.plotly_chart(fig_hourly, use_container_width=True)
 
@@ -503,11 +681,29 @@ with tabs[3]:
     st.header("⏱️ Hourly Inflow/Outflow Utilization (Last 12 Months)")
 
     # -----------------------------
-    # Filter last 12 months
+    # Prepare year-month list
     # -----------------------------
     route_df['year_month'] = route_df['year']*100 + route_df['month']
+    ym_list = sorted(route_df['year_month'].unique())
+    ym_map = {ym: f"{str(ym)[:4]}-{str(ym)[4:].zfill(2)}" for ym in ym_list}
+    ym_options = ["All"] + [ym_map[ym] for ym in ym_list]
+
+    # Default = "All"
+    selected_ym = st.selectbox(
+        "Select Year-Month",
+        options=ym_options,
+        index=0  # default "All"
+    )
+
+    # -----------------------------
+    # Filter last 12 months or selected month
+    # -----------------------------
     last_12_ym = sorted(route_df['year_month'].unique())[-12:]
-    route_12m_df = route_df[route_df['year_month'].isin(last_12_ym)]
+    if selected_ym == "All":
+        route_12m_df = route_df[route_df['year_month'].isin(last_12_ym)]
+    else:
+        ym_key = [k for k, v in ym_map.items() if v == selected_ym][0]
+        route_12m_df = route_df[route_df['year_month'] == ym_key]
 
     # -----------------------------
     # Select Hour Filter
@@ -612,7 +808,8 @@ with tabs[3]:
         y='utilization_net',
         color='utilization_net',
         color_continuous_scale=px.colors.sequential.RdBu,
-        title=f"Top {top_n} Stations by Net Utilization (Hour {selected_hour}:00)",
+        title=f"Top {top_n} Stations by Net Utilization "
+              f"({selected_ym if selected_ym!='All' else 'Last 12 Months'}, Hour {selected_hour}:00)",
         labels={'utilization_net': 'Net Utilization (per dock)'},
     )
     st.plotly_chart(fig_imbalance, use_container_width=True)
@@ -642,7 +839,8 @@ with tabs[3]:
         y='utilization_total',
         color='utilization_total',
         color_continuous_scale=px.colors.sequential.Viridis,
-        title=f"Top {top_n} Stations by Total Traffic Utilization (Hour {selected_hour}:00)",
+        title=f"Top {top_n} Stations by Total Traffic Utilization "
+              f"({selected_ym if selected_ym!='All' else 'Last 12 Months'}, Hour {selected_hour}:00)",
         labels={'utilization_total': 'Total Utilization (per dock)'},
     )
     st.plotly_chart(fig_traffic, use_container_width=True)
