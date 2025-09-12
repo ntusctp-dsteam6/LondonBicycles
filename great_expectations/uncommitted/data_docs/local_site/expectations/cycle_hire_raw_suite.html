@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Data documentation compiled by Great Expectations</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <title></title>
+
+    
+    
+    <link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.19.1/dist/bootstrap-table.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"/>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/bootstrap-table@1.19.0/dist/extensions/filter-control/bootstrap-table-filter-control.css">
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@forevolve/bootstrap-dark@1.1.0/dist/css/bootstrap-prefers-dark.css" />
+
+    <style>
+  
+
+body {
+  position: relative;
+}
+
+.container {
+  padding-top: 50px;
+}
+
+.sticky {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 90px;
+  z-index: 1;
+}
+
+.ge-section {
+  clear: both;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+}
+
+.popover {
+  max-width: 100%;
+}
+
+.cooltip {
+  display: inline-block;
+  position: relative;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cooltip .top {
+  min-width: 200px;
+  top: -6px;
+  left: 50%;
+  transform: translate(-50%, -100%);
+  padding: 10px 20px;
+  color: #FFFFFF;
+  background-color: #222222;
+  font-weight: normal;
+  font-size: 13px;
+  border-radius: 8px;
+  position: absolute;
+  z-index: 99999999 !important;
+  box-sizing: border-box;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.5);
+  display: none;
+}
+
+.cooltip:hover .top {
+  display: block;
+  z-index: 99999999 !important;
+}
+
+.cooltip .top i {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -12px;
+  width: 24px;
+  height: 12px;
+  overflow: hidden;
+}
+
+.cooltip .top i::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background-color: #222222;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.5);
+}
+
+ul {
+  padding-inline-start: 20px;
+}
+
+.show-scrollbars {
+  overflow: auto;
+}
+
+td .show-scrollbars {
+  max-height: 80vh;
+}
+
+/*.show-scrollbars ul {*/
+/*  padding-bottom: 20px*/
+/*}*/
+
+.show-scrollbars::-webkit-scrollbar {
+  -webkit-appearance: none;
+}
+
+.show-scrollbars::-webkit-scrollbar:vertical {
+  width: 11px;
+}
+
+.show-scrollbars::-webkit-scrollbar:horizontal {
+  height: 11px;
+}
+
+.show-scrollbars::-webkit-scrollbar-thumb {
+  border-radius: 8px;
+  border: 2px solid white; /* should match background, can't be transparent */
+  background-color: rgba(0, 0, 0, .5);
+}
+
+#ge-cta-footer {
+  opacity: 0.9;
+  border-left-width: 4px
+}
+
+.carousel-caption {
+    position: relative;
+    left: 0;
+    top: 0;
+}
+
+footer {
+  position: fixed;
+  border-top: 1px solid #98989861;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  padding: 4px;
+  font-size: 14px;
+  text-align: right;
+  width: 100%;
+  background: white;
+  z-index: 100000;
+}
+footer a {
+  padding-right: 8px;
+  color: #ff6210;
+  font-weight: 600;
+}
+
+footer a:hover {
+    color: #bc490d;
+    text-decoration: underline;
+}
+
+/* some css overrides for dark mode*/
+@media (prefers-color-scheme: dark) {
+  .table {
+    color: #f1f1f1 !important;
+    background-color: #212529;
+  }
+  .table-bordered{
+    border: #f1f1f1;
+  }
+  .table-hover tbody tr:hover {
+    color: #f1f1f1;
+    background-color: rgba(255,255,255,.075);
+  }
+  .form-control:disabled,
+  .form-control[readonly]{
+    background-color: #343a40;
+    opacity: .8;
+  }
+
+  .bg-light {
+    background: inherit !important;
+  }
+
+  .code-snippet {
+    background: #CDCDCD !important;
+  }
+
+  .alert-secondary a {
+    color: #0062cc;
+  }
+
+  .alert-secondary a:focus, .alert-secondary a:hover{
+    color: #004fa5;
+  }
+
+  .navbar-brand a {
+    background: url('https://great-expectations-web-assets.s3.us-east-2.amazonaws.com/full_logo_dark.png') 0 0 no-repeat;
+    background-size: 228.75px 50px;
+    display: inline-block
+  }
+  .navbar-brand a img {
+    visibility:hidden
+  }
+  footer {
+    border-top: 1px solid #ffffff61;
+    background: black;
+    z-index: 100000;
+  }
+  footer a {
+    color: #ff6210;
+  }
+
+  footer a:hover {
+    color: #ff6210;
+  }
+}</style>
+    <style></style>
+
+    
+  
+
+<script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+<script src="https://cdn.jsdelivr.net/npm/vega-lite@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/bootstrap-table@1.19.1/dist/bootstrap-table.min.js"></script>
+<script src="https://unpkg.com/bootstrap-table@1.19.1/dist/extensions/filter-control/bootstrap-table-filter-control.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+    
+  
+
+
+  
+
+<link rel="shortcut icon" href="../static/images/favicon.ico" type="image/x-icon"/>
+  </head>
+
+  <body>
+    
+      
+  
+
+
+
+
+  
+
+
+  
+<style type="text/css">
+div.card-footer .container {
+    padding-top: 0;
+}
+div.walkthrough-card {
+    height: 100%;
+ }
+div.modal-body {
+    height: 700px
+}
+div.image-sizer {
+    max-height: 400px;
+    width: 100%;
+    padding: 0 40px;
+    overflow: hidden;
+    margin-bottom: 1em;
+}
+.code-snippet {
+    margin: 0 40px 1em 40px;
+    padding: 1em 40px;
+}
+code.inline-code {
+    padding: 2px 5px;
+}
+img.dev-loop {
+    max-height: 250px;
+}
+.json-key {
+    color: #333333;
+    font-weight: bold;
+}
+.json-str {
+    color: darkgreen;
+}
+.json-bool {
+    color: darkorange;
+}
+.json-number {
+    color: darkblue;
+}
+</style>
+
+<div class="modal fade ge-walkthrough-modal" tabindex="-1" role="dialog" aria-labelledby="ge-walkthrough-modal-title"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title" id="ge-walkthrough-modal-title">Great Expectations Walkthrough</h6>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="card walkthrough-card bg-dark text-white walkthrough-1">
+        <div class="card-header"><h4>How to work with Great Expectations</h4></div>
+            <div class="card-body">
+              <div class="image-sizer text-center">
+                  <img src="../static/images/iterative-dev-loop.png" class="img-fluid rounded-sm mx-auto dev-loop">
+              </div>
+                  <p>
+                      Welcome! Now that you have initialized your project, the best way to work with Great Expectations is in this iterative dev loop:
+                  </p>
+                <ol>
+                    <li>Let Great Expectations create a simple first draft suite, by running <code class="inline-code bg-light">great_expectations suite new</code>.</li>
+                    <li>View the suite here in Data Docs.</li>
+                    <li>Edit the suite in a Jupyter notebook by running <code class="inline-code bg-light">great_expectations suite edit</code></li>
+                    <li>Repeat Steps 2-3 until you are happy with your suite.</li>
+                    <li>Commit this suite to your source control repository.</li>
+                </ol>
+            </div>
+            <div class="card-footer walkthrough-links">
+              <div class="container">
+                <div class="row">
+                  <div class="col-sm">
+                    &nbsp;
+                  </div>
+                  <div class="col-6 text-center text-secondary">
+                    1 of 7
+                    <div class="progress" style="height: 2px">
+                      <div class="progress-bar bg-info" role="progressbar" style="width: 16%" aria-valuenow="16" aria-valuemin="0" aria-valuemax="16"></div>
+                    </div>
+                  </div>
+                  <div class="col-sm">
+                    <a href="#" class="next-link btn btn-primary float-right" onclick="go_to_slide(2)">Next</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+        </div>
+
+
+                <div class="card walkthrough-card bg-dark text-white walkthrough-2">
+                <div class="card-header"><h4>What are Expectations?</h4></div>
+                <div class="card-body">
+                    <ul class="code-snippet bg-light text-muted rounded-sm">
+                        <li>expect_column_to_exist</li>
+                        <li>expect_table_row_count_to_be_between</li>
+                        <li>expect_column_values_to_be_unique</li>
+                        <li>expect_column_values_to_not_be_null</li>
+                        <li>expect_column_values_to_be_between</li>
+                        <li>expect_column_values_to_match_regex</li>
+                        <li>expect_column_mean_to_be_between</li>
+                        <li>expect_column_kl_divergence_to_be_less_than</li>
+                        <li>... <a href="https://greatexpectations.io/expectations">and many more</a></li>
+                    </ul>
+                  <p>An expectation is a falsifiable, verifiable statement about data.</p>
+                  <p>Expectations provide a language to talk about data characteristics and data quality - humans to humans, humans to machines and machines to machines.</p>
+                  <p>Expectations are both data tests and docs!</p>
+                </div>
+                <div class="card-footer walkthrough-links">
+                  <div class="container">
+                    <div class="row">
+                      <div class="col-sm">
+                        <a href="#" class="next-link btn btn-secondary float-left" onclick="go_to_slide(1)">Back</a>
+                      </div>
+                      <div class="col-6 text-center text-secondary">
+                        2 of 7
+                        <div class="progress" style="height: 2px">
+                          <div class="progress-bar bg-info" role="progressbar" style="width: 32%" aria-valuenow="32" aria-valuemin="0" aria-valuemax="32"></div>
+                        </div>
+                      </div>
+                      <div class="col-sm">
+                        <a href="#" class="next-link btn btn-primary float-right" onclick="go_to_slide(3)">Next</a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                </div>
+
+
+                <div class="card walkthrough-card bg-dark text-white walkthrough-3">
+                <div class="card-header"><h4>Expectations can be presented in a machine-friendly JSON</h4></div>
+                <div class="card-body">
+                    <p class="code-snippet bg-light text-muted rounded-sm">
+{<br />
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-key">"expectation_type"</span>: <span class="json-str">"expect_column_values_to_not_be_null",</span><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-key">"kwargs"</span>: {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-key">"column"</span>: <span class="json-str">"user_id"</span><br />
+&nbsp;&nbsp;&nbsp;&nbsp;}<br />
+}<br />
+                    </p>
+                  <p>A machine can test if a dataset conforms to the expectation.</p>
+                </div>
+                <div class="card-footer walkthrough-links">
+                  <div class="container">
+                    <div class="row">
+                      <div class="col-sm">
+                        <a href="#" class="next-link btn btn-secondary float-left" onclick="go_to_slide(2)">Back</a>
+                      </div>
+                      <div class="col-6 text-center text-secondary">
+                        3 of 7
+                        <div class="progress" style="height: 2px">
+                          <div class="progress-bar bg-info" role="progressbar" style="width: 50%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="50"></div>
+                        </div>
+                      </div>
+                      <div class="col-sm">
+                        <a href="#" class="next-link btn btn-primary float-right" onclick="go_to_slide(4)">Next</a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                </div>
+
+                <div class="card walkthrough-card bg-dark text-white walkthrough-4">
+                <div class="card-header"><h4>Validation produces a validation result object</h4></div>
+                <div class="card-body">
+                     <p class="code-snippet bg-light text-muted rounded-sm">
+{<br />
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-key">"success"</span>: <span class="json-bool">false</span>,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-key">"result":</span> {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-key">"element_count"</span>: <span class="json-number">253405,</span><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-key">"unexpected_count"</span>: <span class="json-number">7602,</span><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-key">"unexpected_percent"</span>: <span class="json-number">2.999</span><br />
+&nbsp;&nbsp;&nbsp;&nbsp;},<br />
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-key">"expectation_config"</span>: {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-key">"expectation_type"</span>: <span class="json-str">"expect_column_values_to_not_be_null"</span>,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-key">"kwargs"</span>: {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-key">"column"</span>: <span class="json-str">"user_id"</span><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br />
+}<br />
+                    </p>
+                  <p>Here's an example Validation Result (not from your data) in JSON format. This object has rich context about the test failure.</p>
+                </div>
+                <div class="card-footer walkthrough-links">
+                  <div class="container">
+                    <div class="row">
+                      <div class="col-sm">
+                        <a href="#" class="next-link btn btn-secondary float-left" onclick="go_to_slide(3)">Back</a>
+                      </div>
+                      <div class="col-6 text-center text-secondary">
+                        4 of 7
+                        <div class="progress" style="height: 2px">
+                          <div class="progress-bar bg-info" role="progressbar" style="width: 68%" aria-valuenow="68" aria-valuemin="0" aria-valuemax="68"></div>
+                        </div>
+                      </div>
+                      <div class="col-sm">
+                        <a href="#" class="next-link btn btn-primary float-right" onclick="go_to_slide(5)">Next</a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                </div>
+
+                <div class="card walkthrough-card bg-dark text-white walkthrough-5">
+                <div class="card-header"><h4>Validation results save you time.</h4></div>
+                <div class="card-body">
+                  <div class="image-sizer text-center">
+                      <img src="../static/images/validation_failed_unexpected_values.gif" class="img-fluid rounded-sm mx-auto">
+                  </div>
+                  <p>This is an example of what a single failed Expectation looks like in Data Docs. Note the failure includes unexpected values from your data. This helps you debug pipelines faster.</p>
+                </div>
+                <div class="card-footer walkthrough-links">
+                  <div class="container">
+                    <div class="row">
+                      <div class="col-sm">
+                        <a href="#" class="next-link btn btn-secondary float-left" onclick="go_to_slide(4)">Back</a>
+                      </div>
+                      <div class="col-6 text-center text-secondary">
+                        5 of 7
+                        <div class="progress" style="height: 2px">
+                          <div class="progress-bar bg-info" role="progressbar" style="width: 84%" aria-valuenow="84" aria-valuemin="0" aria-valuemax="84"></div>
+                        </div>
+                      </div>
+                      <div class="col-sm">
+                        <a href="#" class="next-link btn btn-primary float-right" onclick="go_to_slide(6)">Next</a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                </div>
+
+                <div class="card walkthrough-card bg-dark text-white walkthrough-6">
+                <div class="card-header"><h4>Great Expectations provides a large library of expectations.</h4></div>
+                <div class="card-body">
+                  <div class="image-sizer text-center">
+                      <img src="../static/images/glossary_scroller.gif" class="img-fluid rounded-sm mx-auto">
+                  </div>
+                  <p><a href="https://greatexpectations.io/expectations">Nearly 50 built in expectations</a> allow you to express how you understand your data, and you can add custom
+                  expectations if you need a new one.
+                  </p>
+                </div>
+                <div class="card-footer walkthrough-links">
+                  <div class="container">
+                    <div class="row">
+                      <div class="col-sm">
+                        <a href="#" class="next-link btn btn-secondary float-left" onclick="go_to_slide(5)">Back</a>
+                      </div>
+                      <div class="col-6 text-center text-secondary">
+                        6 of 7
+                        <div class="progress" style="height: 2px">
+                          <div class="progress-bar bg-info" role="progressbar" style="width: 84%" aria-valuenow="84" aria-valuemin="0" aria-valuemax="84"></div>
+                        </div>
+                      </div>
+                      <div class="col-sm">
+                        <a href="#" class="next-link btn btn-primary float-right" onclick="go_to_slide(7)">Next</a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                </div>
+
+                <div class="card walkthrough-card bg-dark text-white walkthrough-7">
+                <div class="card-header"><h4>Now explore and edit the sample suite!</h4></div>
+                <div class="card-body">
+                  <p>This sample suite shows you a few examples of expectations.</p>
+                  <p>This Expectation Suite may not be a complete assessment of the quality of your data. You should review and edit the Expectations based on domain knowledge.</p>
+                  <p>When you are ready, press the <strong>How to Edit</strong> button to kick off the iterative dev loop.</p>
+                </div>
+                <div class="card-footer walkthrough-links">
+                  <div class="container">
+                    <div class="row">
+                      <div class="col-sm">
+                        <a href="#" class="next-link btn btn-secondary float-left" onclick="go_to_slide(6)">Back</a>
+                      </div>
+                      <div class="col-6 text-center text-secondary">
+                        7 of 7
+                        <div class="progress" style="height: 2px">
+                          <div class="progress-bar bg-info" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                      </div>
+                      <div class="col-sm">
+                        <button type="button" class="btn btn-primary float-right" data-dismiss="modal" aria-label="Close">
+                          <span aria-hidden="true">Done</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/JavaScript">
+  $(".ge-walkthrough-modal").on('hide.bs.modal', function (e) {
+    try {
+      localStorage.setItem('ge-walkthrough-modal-dismissed', 'true');
+    }
+    catch (e) {
+      console.log(e);
+    }
+    go_to_slide(1);
+  })
+</script>
+
+
+<script type="text/JavaScript">
+  function go_to_slide(slide_number) {
+    hide_cards();
+    $('.walkthrough-' + slide_number).show();
+  }
+  function hide_cards() {
+    $('.walkthrough-card').hide();
+  }
+  hide_cards();
+  go_to_slide(1);
+</script>
+    
+
+    
+      
+  
+
+
+
+
+
+  
+
+<script type="text/javascript">
+$(function() {
+    $('button.copy-edit-command').click(function() {
+        $('.edit-command').focus();
+        $('.edit-command').select();
+        document.execCommand('copy');
+    });
+});
+</script>
+
+<div class="modal fade ge-expectation-editing-instructions-modal" tabindex="-1" role="dialog" aria-labelledby="ge-expectation-editing-instructions-modal-title"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="ge-expectation-editing-instructions-modal-title">How to Edit This Expectation Suite</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" style="height: 350px">
+        <p>Expectations are best <strong>edited interactively in Jupyter notebooks</strong>.</p>
+        <p>To automatically generate a notebook that does this run:</p>
+        <div class="input-group mb-3">
+          
+            <input type="text" class="form-control edit-command" readonly value="great_expectations suite edit cycle_hire_raw_suite">
+          
+            <div class="input-group-append">
+                <button class="btn btn-primary copy-edit-command" type="button"><i class="far fa-clipboard"></i> Copy</button>
+            </div>
+        </div>
+      <p>Once you have made your changes and <strong>run the entire notebook</strong> you can kill the notebook by pressing <strong>Ctr-C</strong> in your terminal.</p>
+      <p>Because these notebooks are generated from an Expectation Suite, these notebooks are <strong>entirely disposable</strong>.</p>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  
+
+
+  
+
+<nav class="navbar navbar-expand-md sticky-top border-bottom" style="height: 70px">
+  <div class="mr-auto">
+    <nav class="d-flex align-items-center">
+      <div class="float-left navbar-brand m-0 h-100">
+        <a href="../index.html">
+          <img
+            class="NO-CACHE"
+            src="https://great-expectations-web-assets.s3.us-east-2.amazonaws.com/logo-long.png?d=20250912T112508.249340Z&dataContextId=4b386888-a3a3-4658-8ae9-f88e3b8198ca"
+            alt="Great Expectations"
+            style="width: auto; height: 50px"
+          />
+        </a>
+      </div>
+      
+        <ol class="ge-breadcrumbs breadcrumb d-md-inline-flex bg-light ml-2 mr-0 mt-0 mb-0 pt-0 pb-0 d-none">
+            <li class="ge-breadcrumbs-item breadcrumb-item"><a href="../index.html">Home</a></li>
+            <li class="ge-breadcrumbs-item breadcrumb-item active" aria-current="page">Expectations / cycle_hire_raw_suite</li>
+        </ol>
+      
+    </nav>
+  </div>
+</nav>
+    
+
+    <div class="container-fluid pt-4 pb-4 pl-5 pr-5">
+      <div class="row">
+        <div class="col-lg-2 col-md-2 col-sm-12 d-sm-block px-0">
+  <div class="mb-4">
+  
+    <div class="col-12 p-0">
+      <h4>Expectation Suite</h4>
+      <p class="lead">A collection of Expectations defined for batches of data.</p>
+    </div>
+  
+</div>
+  <div class="sticky">
+    
+      <script>
+    function showAllValidations() {
+    $(".hide-succeeded-validation-target-child").parent().fadeIn();
+    $(".hide-succeeded-validation-target").fadeIn();
+    $(".hide-succeeded-validations-column-section-target-child").parent().parent().each((idx, el) => {
+      $(el).fadeIn();
+      const elId = el.id;
+      $(`a[href$=${elId}]`).fadeIn();
+    })
+  }
+
+    function hideSucceededValidations() {
+    $(".hide-succeeded-validation-target-child").parent().fadeOut();
+    $(".hide-succeeded-validation-target").fadeOut();
+    $(".hide-succeeded-validations-column-section-target-child").parent().parent().each((idx, el) => {
+      $(el).fadeOut();
+      const elId = el.id;
+      $(`a[href$=${elId}]`).fadeOut();
+    })
+  }
+</script>
+
+<div class="card mb-3">
+  <div class="card-header p-2">
+    <strong>Actions</strong>
+  </div>
+  <div class="card-body p-3">
+    
+    
+      
+        <div class="mb-2">
+          <div class="d-flex justify-content-center">
+            <button type="button" class="btn btn-warning" data-toggle="modal" data-target=".ge-expectation-editing-instructions-modal">
+              <i class="fas fa-edit"></i> How to Edit This Suite
+            </button>
+          </div>
+        </div>
+      
+
+      <div class="mb-2">
+        <div class="d-flex justify-content-center">
+          <button type="button" class="btn btn-info" data-toggle="modal" data-target=".ge-walkthrough-modal">
+            Show Walkthrough
+          </button>
+        </div>
+      </div>
+    
+  </div>
+</div>
+    
+    
+      <div class="card d-md-block d-none" style="max-height: 75vh">
+  <div class="card-header p-2">
+    <strong>Table of Contents</strong>
+  </div>
+  <div class="card-body p-0" style="overflow: auto; height: 100%">
+    <nav id="navigation" class="rounded navbar   bg-light ge-navigation-sidebar-container p-1" style="max-height: 65vh;">
+      <ul class="nav nav-pills ge-navigation-sidebar-content col-12 p-0" style="max-height: 65vh">
+        
+          
+            <li class="nav-item col-12">
+              <a class="nav-link ge-navigation-sidebar-link" href="#section-1"
+               style="white-space: normal; word-break: break-all;overflow-wrap: normal;">
+                <strong>Overview</strong>
+              </a>
+            </li>
+          
+        
+          
+            <li class="nav-item col-12">
+              <a class="nav-link ge-navigation-sidebar-link ml-1" href="#section-2"
+                 style="white-space: normal; word-break: break-all;overflow-wrap: normal;">
+                duration
+              </a>
+            </li>
+          
+        
+          
+            <li class="nav-item col-12">
+              <a class="nav-link ge-navigation-sidebar-link ml-1" href="#section-3"
+                 style="white-space: normal; word-break: break-all;overflow-wrap: normal;">
+                end_station_id
+              </a>
+            </li>
+          
+        
+          
+            <li class="nav-item col-12">
+              <a class="nav-link ge-navigation-sidebar-link ml-1" href="#section-4"
+                 style="white-space: normal; word-break: break-all;overflow-wrap: normal;">
+                start_station_id
+              </a>
+            </li>
+          
+        
+      </ul>
+    </nav>
+  </div>
+</div>
+    
+  </div>
+</div>
+        <div class="col-md-10 col-lg-10 col-xs-12 pl-md-4 pr-md-3">
+        
+          <div id="section-1" class="ge-section container-fluid mb-1 pb-1 pl-sm-3 px-0">
+    <div class="row" >
+        
+
+<div id="section-1-content-block-1" class="col-12" >
+
+    <div id="section-1-content-block-1-header" class="alert alert-secondary" >
+        <div>
+          
+                <h5 class="m-0" >
+                    Overview
+                </h5>
+            
+        </div>
+      
+    </div>
+
+</div>
+        
+
+<div id="section-1-content-block-2" class="col-12 table-responsive mt-1" >
+
+    <div id="section-1-content-block-2-header" >
+        
+          
+            <div>
+              
+                <h6 class="m-0" >
+                    Info
+                </h6>
+            
+            </div>
+          
+        </div>
+
+
+
+
+<table
+  id="section-1-content-block-2-body"
+  class="table table-sm" style="margin-bottom:0.5rem !important; margin-top:0.5rem !important;" 
+  data-toggle="table"
+  
+>
+    
+    
+    
+      
+      
+      
+    
+      <thead hidden>
+        <tr>
+            
+                
+                <th
+                  
+                >
+                  
+                </th>
+            
+                
+                <th
+                  
+                >
+                  
+                </th>
+            
+        </tr>
+      </thead>
+
+    <tbody>
+      <tr>
+          <td id="section-1-content-block-2-cell-1-1" ><div class="show-scrollbars">Expectation Suite Name</div></td><td id="section-1-content-block-2-cell-1-2" ><div class="show-scrollbars">cycle_hire_raw_suite</div></td></tr><tr>
+          <td id="section-1-content-block-2-cell-2-1" ><div class="show-scrollbars">Great Expectations Version</div></td><td id="section-1-content-block-2-cell-2-2" ><div class="show-scrollbars">0.18.22</div></td></tr></tbody>
+</table>
+
+</div>
+        
+
+<div id="section-1-content-block-3" class="col-12 table-responsive mt-1" >
+
+    
+
+<div id="section-1-content-block-3-body" class="table table-sm" >
+  <div id="section-1-content-block-3-header" >
+        
+          
+            <div>
+              
+                <h6 class="m-0" >
+                    Notes
+                </h6>
+            
+            </div>
+          
+        </div>
+
+  
+        <p >This Expectation suite currently contains 4 total Expectations across 3 columns.</p>
+      
+    </div>
+
+</div>
+        
+    </div>
+</div>
+        
+          <div id="section-2" class="ge-section container-fluid mb-1 pb-1 pl-sm-3 px-0">
+    <div class="row" >
+        
+
+<div id="section-2-content-block-1" class="col-12" >
+
+    <div id="section-2-content-block-1-header" class="alert alert-secondary" >
+        <div>
+          
+                <h5 class="m-0" >
+                    duration
+                </h5>
+            
+        </div>
+      
+    </div>
+
+</div>
+        
+
+<div id="section-2-content-block-2" class="col-12" >
+
+    
+
+<ul id="section-2-content-block-2-body" >
+    
+            
+        
+        <li >
+                <span >
+                    values must be greater than or equal to <span class="badge badge-secondary" >0</span> and less than or equal to <span class="badge badge-secondary" >86400</span>, at least <span class="badge badge-secondary" >99.5</span> % of the time.
+                </span>
+            </li>
+    
+            
+        
+        <li style="list-style-type:none;" >
+                <hr class="mt-1 mb-1" >
+                    
+                </hr>
+            </li>
+    
+</ul>
+
+</div>
+        
+    </div>
+</div>
+        
+          <div id="section-3" class="ge-section container-fluid mb-1 pb-1 pl-sm-3 px-0">
+    <div class="row" >
+        
+
+<div id="section-3-content-block-1" class="col-12" >
+
+    <div id="section-3-content-block-1-header" class="alert alert-secondary" >
+        <div>
+          
+                <h5 class="m-0" >
+                    end_station_id
+                </h5>
+            
+        </div>
+      
+    </div>
+
+</div>
+        
+
+<div id="section-3-content-block-2" class="col-12" >
+
+    
+
+<ul id="section-3-content-block-2-body" >
+    
+            
+        
+        <li >
+                <span >
+                    values must not be null, at least <span class="badge badge-secondary" >98</span> % of the time.
+                </span>
+            </li>
+    
+            
+        
+        <li style="list-style-type:none;" >
+                <hr class="mt-1 mb-1" >
+                    
+                </hr>
+            </li>
+    
+</ul>
+
+</div>
+        
+    </div>
+</div>
+        
+          <div id="section-4" class="ge-section container-fluid mb-1 pb-1 pl-sm-3 px-0">
+    <div class="row" >
+        
+
+<div id="section-4-content-block-1" class="col-12" >
+
+    <div id="section-4-content-block-1-header" class="alert alert-secondary" >
+        <div>
+          
+                <h5 class="m-0" >
+                    start_station_id
+                </h5>
+            
+        </div>
+      
+    </div>
+
+</div>
+        
+
+<div id="section-4-content-block-2" class="col-12" >
+
+    
+
+<ul id="section-4-content-block-2-body" >
+    
+            
+        
+        <li >
+                <span >
+                    values must not be null, at least <span class="badge badge-secondary" >98</span> % of the time.
+                </span>
+            </li>
+    
+            
+        
+        <li style="list-style-type:none;" >
+                <hr class="mt-1 mb-1" >
+                    
+                </hr>
+            </li>
+    
+            
+        
+        <li >
+                <span >
+                    values must belong to this set: <span class="badge badge-secondary" >126</span> <span class="badge badge-secondary" >136</span> <span class="badge badge-secondary" >140</span> <span class="badge badge-secondary" >215</span> <span class="badge badge-secondary" >266</span> <span class="badge badge-secondary" >313</span> <span class="badge badge-secondary" >427</span> <span class="badge badge-secondary" >601</span> <span class="badge badge-secondary" >792</span> <span class="badge badge-secondary" >109</span> <span class="badge badge-secondary" >175</span> <span class="badge badge-secondary" >579</span> <span class="badge badge-secondary" >246</span> <span class="badge badge-secondary" >532</span> <span class="badge badge-secondary" >551</span> <span class="badge badge-secondary" >229</span> <span class="badge badge-secondary" >564</span> <span class="badge badge-secondary" >786</span> <span class="badge badge-secondary" >211</span> <span class="badge badge-secondary" >498</span> <span class="badge badge-secondary" >98</span> <span class="badge badge-secondary" >491</span> <span class="badge badge-secondary" >513</span> <span class="badge badge-secondary" >362</span> <span class="badge badge-secondary" >378</span> <span class="badge badge-secondary" >671</span> <span class="badge badge-secondary" >447</span> <span class="badge badge-secondary" >410</span> <span class="badge badge-secondary" >193</span> <span class="badge badge-secondary" >194</span> <span class="badge badge-secondary" >205</span> <span class="badge badge-secondary" >594</span> <span class="badge badge-secondary" >200</span> <span class="badge badge-secondary" >384</span> <span class="badge badge-secondary" >459</span> <span class="badge badge-secondary" >173</span> <span class="badge badge-secondary" >451</span> <span class="badge badge-secondary" >721</span> <span class="badge badge-secondary" >375</span> <span class="badge badge-secondary" >455</span> <span class="badge badge-secondary" >693</span> <span class="badge badge-secondary" >530</span> <span class="badge badge-secondary" >589</span> <span class="badge badge-secondary" >722</span> <span class="badge badge-secondary" >91</span> <span class="badge badge-secondary" >411</span> <span class="badge badge-secondary" >454</span> <span class="badge badge-secondary" >614</span> <span class="badge badge-secondary" >657</span> <span class="badge badge-secondary" >726</span> <span class="badge badge-secondary" >742</span> <span class="badge badge-secondary" >769</span> <span class="badge badge-secondary" >538</span> <span class="badge badge-secondary" >539</span> <span class="badge badge-secondary" >623</span> <span class="badge badge-secondary" >691</span> <span class="badge badge-secondary" >756</span> <span class="badge badge-secondary" >553</span> <span class="badge badge-secondary" >660</span> <span class="badge badge-secondary" >700</span> <span class="badge badge-secondary" >851</span> <span class="badge badge-secondary" >875</span> <span class="badge badge-secondary" >4</span> <span class="badge badge-secondary" >613</span> <span class="badge badge-secondary" >615</span> <span class="badge badge-secondary" >620</span> <span class="badge badge-secondary" >687</span> <span class="badge badge-secondary" >754</span> <span class="badge badge-secondary" >563</span> <span class="badge badge-secondary" >21</span> <span class="badge badge-secondary" >753</span> <span class="badge badge-secondary" >829</span> <span class="badge badge-secondary" >831</span> <span class="badge badge-secondary" >852</span> <span class="badge badge-secondary" >630</span> <span class="badge badge-secondary" >647</span> <span class="badge badge-secondary" >655</span> <span class="badge badge-secondary" >94</span> <span class="badge badge-secondary" >505</span> <span class="badge badge-secondary" >632</span> <span class="badge badge-secondary" >636</span> <span class="badge badge-secondary" >736</span> <span class="badge badge-secondary" >830</span> <span class="badge badge-secondary" >219</span> <span class="badge badge-secondary" >656</span> <span class="badge badge-secondary" >475</span> <span class="badge badge-secondary" >476</span> <span class="badge badge-secondary" >767</span> <span class="badge badge-secondary" >814</span> <span class="badge badge-secondary" >648</span> <span class="badge badge-secondary" >675</span> <span class="badge badge-secondary" >744</span> <span class="badge badge-secondary" >832</span> <span class="badge badge-secondary" >828</span> <span class="badge badge-secondary" >868</span> <span class="badge badge-secondary" >511</span> <span class="badge badge-secondary" >684</span> <span class="badge badge-secondary" >481</span> <span class="badge badge-secondary" >772</span> <span class="badge badge-secondary" >844</span> <span class="badge badge-secondary" >676</span> <span class="badge badge-secondary" >673</span> <span class="badge badge-secondary" >813</span> <span class="badge badge-secondary" >833</span> <span class="badge badge-secondary" >277</span> <span class="badge badge-secondary" >870</span> <span class="badge badge-secondary" >158</span> <span class="badge badge-secondary" >296</span> <span class="badge badge-secondary" >471</span> <span class="badge badge-secondary" >473</span> <span class="badge badge-secondary" >516</span> <span class="badge badge-secondary" >666</span> <span class="badge badge-secondary" >730</span> <span class="badge badge-secondary" >152</span> <span class="badge badge-secondary" >352</span> <span class="badge badge-secondary" >527</span> <span class="badge badge-secondary" >650</span> <span class="badge badge-secondary" >255</span> <span class="badge badge-secondary" >488</span> <span class="badge badge-secondary" >626</span> <span class="badge badge-secondary" >782</span> <span class="badge badge-secondary" >223</span> <span class="badge badge-secondary" >535</span> <span class="badge badge-secondary" >664</span> <span class="badge badge-secondary" >716</span> <span class="badge badge-secondary" >748</span> <span class="badge badge-secondary" >618</span> <span class="badge badge-secondary" >766</span> <span class="badge badge-secondary" >761</span> <span class="badge badge-secondary" >326</span> <span class="badge badge-secondary" >591</span> <span class="badge badge-secondary" >295</span> <span class="badge badge-secondary" >599</span> <span class="badge badge-secondary" >808</span> <span class="badge badge-secondary" >845</span> <span class="badge badge-secondary" >571</span> <span class="badge badge-secondary" >216</span> <span class="badge badge-secondary" >770</span> <span class="badge badge-secondary" >621</span> <span class="badge badge-secondary" >644</span> <span class="badge badge-secondary" >667</span> <span class="badge badge-secondary" >496</span> <span class="badge badge-secondary" >669</span> <span class="badge badge-secondary" >74</span> <span class="badge badge-secondary" >201</span> <span class="badge badge-secondary" >294</span> <span class="badge badge-secondary" >568</span> <span class="badge badge-secondary" >149</span> <span class="badge badge-secondary" >310</span> <span class="badge badge-secondary" >600</span> <span class="badge badge-secondary" >841</span> <span class="badge badge-secondary" >593</span> <span class="badge badge-secondary" >595</span> <span class="badge badge-secondary" >649</span> <span class="badge badge-secondary" >561</span> <span class="badge badge-secondary" >576</span> <span class="badge badge-secondary" >840</span> <span class="badge badge-secondary" >545</span> <span class="badge badge-secondary" >725</span> <span class="badge badge-secondary" >836</span> <span class="badge badge-secondary" >197</span> <span class="badge badge-secondary" >302</span> <span class="badge badge-secondary" >677</span> <span class="badge badge-secondary" >445</span> <span class="badge badge-secondary" >518</span> <span class="badge badge-secondary" >743</span> <span class="badge badge-secondary" >678</span> <span class="badge badge-secondary" >701</span> <span class="badge badge-secondary" >802</span> <span class="badge badge-secondary" >449</span> <span class="badge badge-secondary" >185</span> <span class="badge badge-secondary" >397</span> <span class="badge badge-secondary" >324</span> <span class="badge badge-secondary" >517</span> <span class="badge badge-secondary" >7</span> <span class="badge badge-secondary" >337</span> <span class="badge badge-secondary" >169</span> <span class="badge badge-secondary" >133</span> <span class="badge badge-secondary" >577</span> <span class="badge badge-secondary" >272</span> <span class="badge badge-secondary" >176</span> <span class="badge badge-secondary" >692</span> <span class="badge badge-secondary" >727</span> <span class="badge badge-secondary" >780</span> <span class="badge badge-secondary" >827</span> <span class="badge badge-secondary" >86</span> <span class="badge badge-secondary" >668</span> <span class="badge badge-secondary" >526</span> <span class="badge badge-secondary" >740</span> <span class="badge badge-secondary" >724</span> <span class="badge badge-secondary" >800</span> <span class="badge badge-secondary" >728</span> <span class="badge badge-secondary" >542</span> <span class="badge badge-secondary" >93</span> <span class="badge badge-secondary" >235</span> <span class="badge badge-secondary" >749</span> <span class="badge badge-secondary" >85</span> <span class="badge badge-secondary" >171</span> <span class="badge badge-secondary" >38</span> <span class="badge badge-secondary" >467</span> <span class="badge badge-secondary" >37</span> <span class="badge badge-secondary" >103</span> <span class="badge badge-secondary" >182</span> <span class="badge badge-secondary" >521</span> <span class="badge badge-secondary" >284</span> <span class="badge badge-secondary" >439</span> <span class="badge badge-secondary" >849</span> <span class="badge badge-secondary" >308</span> <span class="badge badge-secondary" >431</span> <span class="badge badge-secondary" >710</span> <span class="badge badge-secondary" >715</span> <span class="badge badge-secondary" >558</span> <span class="badge badge-secondary" >278</span> <span class="badge badge-secondary" >435</span> <span class="badge badge-secondary" >850</span> <span class="badge badge-secondary" >227</span> <span class="badge badge-secondary" >234</span> <span class="badge badge-secondary" >709</span> <span class="badge badge-secondary" >690</span> <span class="badge badge-secondary" >747</span> <span class="badge badge-secondary" >597</span> <span class="badge badge-secondary" >628</span> <span class="badge badge-secondary" >42</span> <span class="badge badge-secondary" >105</span> <span class="badge badge-secondary" >638</span> <span class="badge badge-secondary" >688</span> <span class="badge badge-secondary" >504</span> <span class="badge badge-secondary" >387</span> <span class="badge badge-secondary" >578</span> <span class="badge badge-secondary" >775</span> <span class="badge badge-secondary" >156</span> <span class="badge badge-secondary" >635</span> <span class="badge badge-secondary" >723</span> <span class="badge badge-secondary" >404</span> <span class="badge badge-secondary" >165</span> <span class="badge badge-secondary" >554</span> <span class="badge badge-secondary" >581</span> <span class="badge badge-secondary" >34</span> <span class="badge badge-secondary" >131</span> <span class="badge badge-secondary" >164</span> <span class="badge badge-secondary" >189</span> <span class="badge badge-secondary" >167</span> <span class="badge badge-secondary" >178</span> <span class="badge badge-secondary" >281</span> <span class="badge badge-secondary" >332</span> <span class="badge badge-secondary" >790</span> <span class="badge badge-secondary" >125</span> <span class="badge badge-secondary" >525</span> <span class="badge badge-secondary" >665</span> <span class="badge badge-secondary" >672</span> <span class="badge badge-secondary" >834</span> <span class="badge badge-secondary" >746</span> <span class="badge badge-secondary" >117</span> <span class="badge badge-secondary" >458</span> <span class="badge badge-secondary" >552</span> <span class="badge badge-secondary" >625</span> <span class="badge badge-secondary" >750</span> <span class="badge badge-secondary" >534</span> <span class="badge badge-secondary" >683</span> <span class="badge badge-secondary" >797</span> <span class="badge badge-secondary" >711</span> <span class="badge badge-secondary" >633</span> <span class="badge badge-secondary" >764</span> <span class="badge badge-secondary" >477</span> <span class="badge badge-secondary" >603</span> <span class="badge badge-secondary" >222</span> <span class="badge badge-secondary" >46</span> <span class="badge badge-secondary" >402</span> <span class="badge badge-secondary" >261</span> <span class="badge badge-secondary" >161</span> <span class="badge badge-secondary" >221</span> <span class="badge badge-secondary" >75</span> <span class="badge badge-secondary" >47</span> <span class="badge badge-secondary" >155</span> <span class="badge badge-secondary" >355</span> <span class="badge badge-secondary" >592</span> <span class="badge badge-secondary" >107</span> <span class="badge badge-secondary" >627</span> <span class="badge badge-secondary" >712</span> <span class="badge badge-secondary" >774</span> <span class="badge badge-secondary" >62</span> <span class="badge badge-secondary" >307</span> <span class="badge badge-secondary" >371</span> <span class="badge badge-secondary" >329</span> <span class="badge badge-secondary" >803</span> <span class="badge badge-secondary" >69</span> <span class="badge badge-secondary" >501</span> <span class="badge badge-secondary" >697</span> <span class="badge badge-secondary" >735</span> <span class="badge badge-secondary" >798</span> <span class="badge badge-secondary" >680</span> <span class="badge badge-secondary" >734</span> <span class="badge badge-secondary" >495</span> <span class="badge badge-secondary" >118</span> <span class="badge badge-secondary" >312</span> <span class="badge badge-secondary" >426</span> <span class="badge badge-secondary" >537</span> <span class="badge badge-secondary" >168</span> <span class="badge badge-secondary" >704</span> <span class="badge badge-secondary" >89</span> <span class="badge badge-secondary" >134</span> <span class="badge badge-secondary" >520</span> <span class="badge badge-secondary" >298</span> <span class="badge badge-secondary" >379</span> <span class="badge badge-secondary" >866</span> <span class="badge badge-secondary" >29</span> <span class="badge badge-secondary" >453</span> <span class="badge badge-secondary" >441</span> <span class="badge badge-secondary" >757</span> <span class="badge badge-secondary" >322</span> <span class="badge badge-secondary" >351</span> <span class="badge badge-secondary" >783</span> <span class="badge badge-secondary" >817</span> <span class="badge badge-secondary" >437</span> <span class="badge badge-secondary" >622</span> <span class="badge badge-secondary" >795</span> <span class="badge badge-secondary" >374</span> <span class="badge badge-secondary" >654</span> <span class="badge badge-secondary" >787</span> <span class="badge badge-secondary" >333</span> <span class="badge badge-secondary" >768</span> <span class="badge badge-secondary" >249</span> <span class="badge badge-secondary" >396</span> <span class="badge badge-secondary" >289</span> <span class="badge badge-secondary" >123</span> <span class="badge badge-secondary" >148</span> <span class="badge badge-secondary" >212</span> <span class="badge badge-secondary" >265</span> <span class="badge badge-secondary" >297</span> <span class="badge badge-secondary" >573</span> <span class="badge badge-secondary" >529</span> <span class="badge badge-secondary" >466</span> <span class="badge badge-secondary" >695</span> <span class="badge badge-secondary" >463</span> <span class="badge badge-secondary" >584</span> <span class="badge badge-secondary" >596</span> <span class="badge badge-secondary" >607</span> <span class="badge badge-secondary" >480</span> <span class="badge badge-secondary" >243</span> <span class="badge badge-secondary" >442</span> <span class="badge badge-secondary" >468</span> <span class="badge badge-secondary" >523</span> <span class="badge badge-secondary" >662</span> <span class="badge badge-secondary" >398</span> <span class="badge badge-secondary" >499</span> <span class="badge badge-secondary" >580</span> <span class="badge badge-secondary" >624</span> <span class="badge badge-secondary" >674</span> <span class="badge badge-secondary" >144</span> <span class="badge badge-secondary" >250</span> <span class="badge badge-secondary" >280</span> <span class="badge badge-secondary" >40</span> <span class="badge badge-secondary" >760</span> <span class="badge badge-secondary" >196</span> <span class="badge badge-secondary" >224</span> <span class="badge badge-secondary" >646</span> <span class="badge badge-secondary" >290</span> <span class="badge badge-secondary" >325</span> <span class="badge badge-secondary" >264</span> <span class="badge badge-secondary" >472</span> <span class="badge badge-secondary" >616</span> <span class="badge badge-secondary" >720</span> <span class="badge badge-secondary" >464</span> <span class="badge badge-secondary" >151</span> <span class="badge badge-secondary" >629</span> <span class="badge badge-secondary" >63</span> <span class="badge badge-secondary" >153</span> <span class="badge badge-secondary" >714</span> <span class="badge badge-secondary" >271</span> <span class="badge badge-secondary" >586</span> <span class="badge badge-secondary" >317</span> <span class="badge badge-secondary" >273</span> <span class="badge badge-secondary" >395</span> <span class="badge badge-secondary" >403</span> <span class="badge badge-secondary" >367</span> <span class="badge badge-secondary" >315</span> <span class="badge badge-secondary" >412</span> <span class="badge badge-secondary" >344</span> <span class="badge badge-secondary" >425</span> <span class="badge badge-secondary" >10</span> <span class="badge badge-secondary" >138</span> <span class="badge badge-secondary" >218</span> <span class="badge badge-secondary" >609</span> <span class="badge badge-secondary" >267</span> <span class="badge badge-secondary" >321</span> <span class="badge badge-secondary" >515</span> <span class="badge badge-secondary" >729</span> <span class="badge badge-secondary" >741</span> <span class="badge badge-secondary" >670</span> <span class="badge badge-secondary" >799</span> <span class="badge badge-secondary" >548</span> <span class="badge badge-secondary" >606</span> <span class="badge badge-secondary" >739</span> <span class="badge badge-secondary" >785</span> <span class="badge badge-secondary" >846</span> <span class="badge badge-secondary" >170</span> <span class="badge badge-secondary" >483</span> <span class="badge badge-secondary" >330</span> <span class="badge badge-secondary" >460</span> <span class="badge badge-secondary" >784</span> <span class="badge badge-secondary" >2</span> <span class="badge badge-secondary" >39</span> <span class="badge badge-secondary" >390</span> <span class="badge badge-secondary" >549</span> <span class="badge badge-secondary" >269</span> <span class="badge badge-secondary" >220</span> <span class="badge badge-secondary" >240</span> <span class="badge badge-secondary" >382</span> <span class="badge badge-secondary" >23</span> <span class="badge badge-secondary" >124</span> <span class="badge badge-secondary" >204</span> <span class="badge badge-secondary" >752</span> <span class="badge badge-secondary" >502</span> <span class="badge badge-secondary" >478</span> <span class="badge badge-secondary" >583</span> <span class="badge badge-secondary" >484</span> <span class="badge badge-secondary" >452</span> <span class="badge badge-secondary" >456</span> <span class="badge badge-secondary" >637</span> <span class="badge badge-secondary" >663</span> <span class="badge badge-secondary" >807</span> <span class="badge badge-secondary" >293</span> <span class="badge badge-secondary" >612</span> <span class="badge badge-secondary" >634</span> <span class="badge badge-secondary" >819</span> <span class="badge badge-secondary" >409</span> <span class="badge badge-secondary" >718</span> <span class="badge badge-secondary" >763</span> <span class="badge badge-secondary" >192</span> <span class="badge badge-secondary" >340</span> <span class="badge badge-secondary" >232</span> <span class="badge badge-secondary" >95</span> <span class="badge badge-secondary" >292</span> <span class="badge badge-secondary" >377</span> <span class="badge badge-secondary" >78</span> <span class="badge badge-secondary" >110</span> <span class="badge badge-secondary" >872</span> <span class="badge badge-secondary" >394</span> <span class="badge badge-secondary" >479</span> <span class="badge badge-secondary" >76</span> <span class="badge badge-secondary" >114</span> <span class="badge badge-secondary" >358</span> <span class="badge badge-secondary" >162</span> <span class="badge badge-secondary" >190</span> <span class="badge badge-secondary" >531</span> <span class="badge badge-secondary" >145</span> <span class="badge badge-secondary" >487</span> <span class="badge badge-secondary" >401</span> <span class="badge badge-secondary" >550</span> <span class="badge badge-secondary" >755</span> <span class="badge badge-secondary" >651</span> <span class="badge badge-secondary" >461</span> <span class="badge badge-secondary" >497</span> <span class="badge badge-secondary" >640</span> <span class="badge badge-secondary" >867</span> <span class="badge badge-secondary" >291</span> <span class="badge badge-secondary" >61</span> <span class="badge badge-secondary" >533</span> <span class="badge badge-secondary" >572</span> <span class="badge badge-secondary" >503</span> <span class="badge badge-secondary" >146</span> <span class="badge badge-secondary" >14</span> <span class="badge badge-secondary" >469</span> <span class="badge badge-secondary" >682</span> <span class="badge badge-secondary" >99</span> <span class="badge badge-secondary" >217</span> <span class="badge badge-secondary" >381</span> <span class="badge badge-secondary" >388</span> <span class="badge badge-secondary" >432</span> <span class="badge badge-secondary" >72</span> <span class="badge badge-secondary" >119</span> <span class="badge badge-secondary" >203</span> <span class="badge badge-secondary" >306</span> <span class="badge badge-secondary" >356</span> <span class="badge badge-secondary" >419</span> <span class="badge badge-secondary" >186</span> <span class="badge badge-secondary" >244</span> <span class="badge badge-secondary" >405</span> <span class="badge badge-secondary" >386</span> <span class="badge badge-secondary" >565</span> <span class="badge badge-secondary" >28</span> <span class="badge badge-secondary" >139</span> <span class="badge badge-secondary" >188</span> <span class="badge badge-secondary" >604</span> <span class="badge badge-secondary" >617</span> <span class="badge badge-secondary" >187</span> <span class="badge badge-secondary" >368</span> <span class="badge badge-secondary" >820</span> <span class="badge badge-secondary" >869</span> <span class="badge badge-secondary" >446</span> <span class="badge badge-secondary" >686</span> <span class="badge badge-secondary" >225</span> <span class="badge badge-secondary" >268</span> <span class="badge badge-secondary" >608</span> <span class="badge badge-secondary" >231</span> <span class="badge badge-secondary" >706</span> <span class="badge badge-secondary" >440</span> <span class="badge badge-secondary" >489</span> <span class="badge badge-secondary" >262</span> <span class="badge badge-secondary" >8</span> <span class="badge badge-secondary" >490</span> <span class="badge badge-secondary" >681</span> <span class="badge badge-secondary" >393</span> <span class="badge badge-secondary" >482</span> <span class="badge badge-secondary" >256</span> <span class="badge badge-secondary" >257</span> <span class="badge badge-secondary" >391</span> <span class="badge badge-secondary" >349</span> <span class="badge badge-secondary" >733</span> <span class="badge badge-secondary" >16</span> <span class="badge badge-secondary" >121</span> <span class="badge badge-secondary" >327</span> <span class="badge badge-secondary" >474</span> <span class="badge badge-secondary" >694</span> <span class="badge badge-secondary" >771</span> <span class="badge badge-secondary" >804</span> <span class="badge badge-secondary" >328</span> <span class="badge badge-secondary" >702</span> <span class="badge badge-secondary" >96</span> <span class="badge badge-secondary" >465</span> <span class="badge badge-secondary" >20</span> <span class="badge badge-secondary" >810</span> <span class="badge badge-secondary" >51</span> <span class="badge badge-secondary" >209</span> <span class="badge badge-secondary" >274</span> <span class="badge badge-secondary" >719</span> <span class="badge badge-secondary" >519</span> <span class="badge badge-secondary" >619</span> <span class="badge badge-secondary" >56</span> <span class="badge badge-secondary" >43</span> <span class="badge badge-secondary" >147</span> <span class="badge badge-secondary" >359</span> <span class="badge badge-secondary" >60</span> <span class="badge badge-secondary" >65</span> <span class="badge badge-secondary" >102</span> <span class="badge badge-secondary" >172</span> <span class="badge badge-secondary" >180</span> <span class="badge badge-secondary" >383</span> <span class="badge badge-secondary" >514</span> <span class="badge badge-secondary" >22</span> <span class="badge badge-secondary" >97</span> <span class="badge badge-secondary" >316</span> <span class="badge badge-secondary" >610</span> <span class="badge badge-secondary" >128</span> <span class="badge badge-secondary" >380</span> <span class="badge badge-secondary" >543</span> <span class="badge badge-secondary" >645</span> <span class="badge badge-secondary" >183</span> <span class="badge badge-secondary" >279</span> <span class="badge badge-secondary" >70</span> <span class="badge badge-secondary" >737</span> <span class="badge badge-secondary" >679</span> <span class="badge badge-secondary" >821</span> <span class="badge badge-secondary" >685</span> <span class="badge badge-secondary" >793</span> <span class="badge badge-secondary" >605</span> <span class="badge badge-secondary" >238</span> <span class="badge badge-secondary" >214</span> <span class="badge badge-secondary" >708</span> <span class="badge badge-secondary" >598</span> <span class="badge badge-secondary" >738</span> <span class="badge badge-secondary" >49</span> <span class="badge badge-secondary" >259</span> <span class="badge badge-secondary" >260</span> <span class="badge badge-secondary" >283</span> <span class="badge badge-secondary" >528</span> <span class="badge badge-secondary" >1</span> <span class="badge badge-secondary" >348</span> <span class="badge badge-secondary" >353</span> <span class="badge badge-secondary" >508</span> <span class="badge badge-secondary" >759</span> <span class="badge badge-secondary" >52</span> <span class="badge badge-secondary" >430</span> <span class="badge badge-secondary" >805</span> <span class="badge badge-secondary" >58</span> <span class="badge badge-secondary" >299</span> <span class="badge badge-secondary" >350</span> <span class="badge badge-secondary" >560</span> <span class="badge badge-secondary" >208</span> <span class="badge badge-secondary" >559</span> <span class="badge badge-secondary" >818</span> <span class="badge badge-secondary" >569</span> <span class="badge badge-secondary" >796</span> <span class="badge badge-secondary" >801</span> <span class="badge badge-secondary" >689</span> <span class="badge badge-secondary" >288</span> <span class="badge badge-secondary" >247</span> <span class="badge badge-secondary" >6</span> <span class="badge badge-secondary" >120</span> <span class="badge badge-secondary" >127</span> <span class="badge badge-secondary" >129</span> <span class="badge badge-secondary" >275</span> <span class="badge badge-secondary" >53</span> <span class="badge badge-secondary" >79</span> <span class="badge badge-secondary" >300</span> <span class="badge badge-secondary" >318</span> <span class="badge badge-secondary" >81</span> <span class="badge badge-secondary" >113</span> <span class="badge badge-secondary" >732</span> <span class="badge badge-secondary" >319</span> <span class="badge badge-secondary" >370</span> <span class="badge badge-secondary" >587</span> <span class="badge badge-secondary" >562</span> <span class="badge badge-secondary" >713</span> <span class="badge badge-secondary" >540</span> <span class="badge badge-secondary" >424</span> <span class="badge badge-secondary" >230</span> <span class="badge badge-secondary" >522</span> <span class="badge badge-secondary" >642</span> <span class="badge badge-secondary" >92</span> <span class="badge badge-secondary" >566</span> <span class="badge badge-secondary" >33</span> <span class="badge badge-secondary" >207</span> <span class="badge badge-secondary" >373</span> <span class="badge badge-secondary" >389</span> <span class="badge badge-secondary" >428</span> <span class="badge badge-secondary" >181</span> <span class="badge badge-secondary" >44</span> <span class="badge badge-secondary" >106</span> <span class="badge badge-secondary" >135</span> <span class="badge badge-secondary" >873</span> <span class="badge badge-secondary" >112</span> <span class="badge badge-secondary" >485</span> <span class="badge badge-secondary" >30</span> <span class="badge badge-secondary" >376</span> <span class="badge badge-secondary" >360</span> <span class="badge badge-secondary" >357</span> <span class="badge badge-secondary" >423</span> <span class="badge badge-secondary" >314</span> <span class="badge badge-secondary" >815</span> <span class="badge badge-secondary" >9</span> <span class="badge badge-secondary" >26</span> <span class="badge badge-secondary" >116</span> <span class="badge badge-secondary" >160</span> <span class="badge badge-secondary" >509</span> <span class="badge badge-secondary" >13</span> <span class="badge badge-secondary" >341</span> <span class="badge badge-secondary" >762</span> <span class="badge badge-secondary" >444</span> <span class="badge badge-secondary" >544</span> <span class="badge badge-secondary" >758</span> <span class="badge badge-secondary" >11</span> <span class="badge badge-secondary" >399</span> <span class="badge badge-secondary" >506</span> <span class="badge badge-secondary" >50</span> <span class="badge badge-secondary" >177</span> <span class="badge badge-secondary" >150</span> <span class="badge badge-secondary" >658</span> <span class="badge badge-secondary" >345</span> <span class="badge badge-secondary" >154</span> <span class="badge badge-secondary" >731</span> <span class="badge badge-secondary" >365</span> <span class="badge badge-secondary" >242</span> <span class="badge badge-secondary" >263</span> <span class="badge badge-secondary" >392</span> <span class="badge badge-secondary" >546</span> <span class="badge badge-secondary" >557</span> <span class="badge badge-secondary" >611</span> <span class="badge badge-secondary" >83</span> <span class="badge badge-secondary" >233</span> <span class="badge badge-secondary" >696</span> <span class="badge badge-secondary" >77</span> <span class="badge badge-secondary" >248</span> <span class="badge badge-secondary" >643</span> <span class="badge badge-secondary" >130</span> <span class="badge badge-secondary" >311</span> <span class="badge badge-secondary" >363</span> <span class="badge badge-secondary" >641</span> <span class="badge badge-secondary" >142</span> <span class="badge badge-secondary" >653</span> <span class="badge badge-secondary" >705</span> <span class="badge badge-secondary" >17</span> <span class="badge badge-secondary" >826</span> <span class="badge badge-secondary" >15</span> <span class="badge badge-secondary" >111</span> <span class="badge badge-secondary" >590</span> <span class="badge badge-secondary" >816</span> <span class="badge badge-secondary" >163</span> <span class="badge badge-secondary" >237</span> <span class="badge badge-secondary" >457</span> <span class="badge badge-secondary" >157</span> <span class="badge badge-secondary" >354</span> <span class="badge badge-secondary" >494</span> <span class="badge badge-secondary" >765</span> <span class="badge badge-secondary" >210</span> <span class="badge badge-secondary" >842</span> <span class="badge badge-secondary" >45</span> <span class="badge badge-secondary" >226</span> <span class="badge badge-secondary" >276</span> <span class="badge badge-secondary" >301</span> <span class="badge badge-secondary" >320</span> <span class="badge badge-secondary" >5</span> <span class="badge badge-secondary" >90</span> <span class="badge badge-secondary" >745</span> <span class="badge badge-secondary" >450</span> <span class="badge badge-secondary" >507</span> <span class="badge badge-secondary" >213</span> <span class="badge badge-secondary" >486</span> <span class="badge badge-secondary" >811</span> <span class="badge badge-secondary" >500</span> <span class="badge badge-secondary" >282</span> <span class="badge badge-secondary" >574</span> <span class="badge badge-secondary" >101</span> <span class="badge badge-secondary" >287</span> <span class="badge badge-secondary" >338</span> <span class="badge badge-secondary" >773</span> <span class="badge badge-secondary" >122</span> <span class="badge badge-secondary" >143</span> <span class="badge badge-secondary" >751</span> <span class="badge badge-secondary" >588</span> <span class="badge badge-secondary" >510</span> <span class="badge badge-secondary" >602</span> <span class="badge badge-secondary" >199</span> <span class="badge badge-secondary" >258</span> <span class="badge badge-secondary" >18</span> <span class="badge badge-secondary" >631</span> <span class="badge badge-secondary" >838</span> <span class="badge badge-secondary" >812</span> <span class="badge badge-secondary" >166</span> <span class="badge badge-secondary" >253</span> <span class="badge badge-secondary" >443</span> <span class="badge badge-secondary" >839</span> <span class="badge badge-secondary" >31</span> <span class="badge badge-secondary" >25</span> <span class="badge badge-secondary" >41</span> <span class="badge badge-secondary" >323</span> <span class="badge badge-secondary" >372</span> <span class="badge badge-secondary" >408</span> <span class="badge badge-secondary" >703</span> <span class="badge badge-secondary" >835</span> <span class="badge badge-secondary" >84</span> <span class="badge badge-secondary" >400</span> <span class="badge badge-secondary" >239</span> <span class="badge badge-secondary" >556</span> <span class="badge badge-secondary" >788</span> <span class="badge badge-secondary" >236</span> <span class="badge badge-secondary" >104</span> <span class="badge badge-secondary" >48</span> <span class="badge badge-secondary" >64</span> <span class="badge badge-secondary" >68</span> <span class="badge badge-secondary" >54</span> <span class="badge badge-secondary" >366</span> <span class="badge badge-secondary" >874</span> <span class="badge badge-secondary" >652</span> <span class="badge badge-secondary" >251</span> <span class="badge badge-secondary" >698</span> <span class="badge badge-secondary" >132</span> <span class="badge badge-secondary" >309</span> <span class="badge badge-secondary" >462</span> <span class="badge badge-secondary" >88</span> <span class="badge badge-secondary" >343</span> <span class="badge badge-secondary" >524</span> <span class="badge badge-secondary" >661</span> <span class="badge badge-secondary" >789</span> <span class="badge badge-secondary" >141</span> <span class="badge badge-secondary" >541</span> <span class="badge badge-secondary" >809</span> <span class="badge badge-secondary" >864</span> <span class="badge badge-secondary" >36</span> <span class="badge badge-secondary" >67</span> <span class="badge badge-secondary" >779</span> <span class="badge badge-secondary" >19</span> <span class="badge badge-secondary" >195</span> <span class="badge badge-secondary" >433</span> <span class="badge badge-secondary" >536</span> <span class="badge badge-secondary" >202</span> <span class="badge badge-secondary" >470</span> <span class="badge badge-secondary" >303</span> <span class="badge badge-secondary" >245</span> <span class="badge badge-secondary" >191</span> <span class="badge badge-secondary" >115</span> <span class="badge badge-secondary" >286</span> <span class="badge badge-secondary" >717</span> <span class="badge badge-secondary" >331</span> <span class="badge badge-secondary" >781</span> <span class="badge badge-secondary" >364</span> <span class="badge badge-secondary" >436</span> <span class="badge badge-secondary" >492</span> <span class="badge badge-secondary" >707</span> <span class="badge badge-secondary" >57</span> <span class="badge badge-secondary" >184</span> <span class="badge badge-secondary" >448</span> <span class="badge badge-secondary" >206</span> <span class="badge badge-secondary" >3</span> <span class="badge badge-secondary" >55</span> <span class="badge badge-secondary" >73</span> <span class="badge badge-secondary" >547</span> <span class="badge badge-secondary" >570</span> <span class="badge badge-secondary" >857</span> <span class="badge badge-secondary" >24</span> <span class="badge badge-secondary" >699</span> <span class="badge badge-secondary" >361</span> <span class="badge badge-secondary" >71</span> <span class="badge badge-secondary" >659</span> <span class="badge badge-secondary" >228</span> <span class="badge badge-secondary" >421</span> <span class="badge badge-secondary" >66</span> <span class="badge badge-secondary" >865</span> <span class="badge badge-secondary" >80</span> <span class="badge badge-secondary" >12</span>.
+                </span>
+            </li>
+    
+            
+        
+        <li style="list-style-type:none;" >
+                <hr class="mt-1 mb-1" >
+                    
+                </hr>
+            </li>
+    
+</ul>
+
+</div>
+        
+    </div>
+</div>
+        
+        </div>
+      </div>
+    </div>
+    
+<footer>
+  <p>Stay current on everything GX with our newsletter <a href="https://greatexpectations.io/newsletter?utm_source=datadocs&utm_medium=product&utm_campaign=newsletter&utm_content=form">Subscribe</a></p>
+</footer>
+  </body>
+</html>

@@ -1,0 +1,275 @@
+{
+  "evaluation_parameters": {},
+  "meta": {
+    "active_batch_definition": {
+      "batch_identifiers": {},
+      "data_asset_name": "stg_cycle_hire",
+      "data_connector_name": "fluent",
+      "datasource_name": "london_bikes_bq"
+    },
+    "batch_markers": {
+      "ge_load_time": "20250911T141917.408675Z"
+    },
+    "batch_spec": {
+      "batch_identifiers": {},
+      "data_asset_name": "stg_cycle_hire",
+      "query": "SELECT * FROM `decisive-studio-469008-m2.LondonBicycles_Stage.stg_cycle_hire`",
+      "temp_table_schema_name": null
+    },
+    "checkpoint_id": null,
+    "checkpoint_name": "stg_cycle_hire_checkpoint",
+    "expectation_suite_name": "stg_cycle_hire_suite",
+    "great_expectations_version": "0.18.22",
+    "run_id": {
+      "run_name": null,
+      "run_time": "2025-09-11T22:19:17.286599+08:00"
+    },
+    "validation_id": null,
+    "validation_time": "20250911T141917.412587Z"
+  },
+  "results": [
+    {
+      "exception_info": {
+        "exception_message": null,
+        "exception_traceback": null,
+        "raised_exception": false
+      },
+      "expectation_config": {
+        "expectation_type": "expect_column_values_to_not_be_null",
+        "kwargs": {
+          "batch_id": "london_bikes_bq-stg_cycle_hire",
+          "column": "rental_id"
+        },
+        "meta": {}
+      },
+      "meta": {},
+      "result": {
+        "element_count": 83434866,
+        "partial_unexpected_counts": [],
+        "partial_unexpected_list": [],
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0
+      },
+      "success": true
+    },
+    {
+      "exception_info": {
+        "exception_message": null,
+        "exception_traceback": null,
+        "raised_exception": false
+      },
+      "expectation_config": {
+        "expectation_type": "expect_column_values_to_be_between",
+        "kwargs": {
+          "batch_id": "london_bikes_bq-stg_cycle_hire",
+          "column": "duration",
+          "max_value": 1440,
+          "min_value": 0
+        },
+        "meta": {}
+      },
+      "meta": {},
+      "result": {
+        "element_count": 83434866,
+        "missing_count": 19587,
+        "missing_percent": 0.02347579727640481,
+        "partial_unexpected_counts": [
+          {
+            "count": 3,
+            "value": 2220
+          },
+          {
+            "count": 3,
+            "value": 2580
+          },
+          {
+            "count": 2,
+            "value": 3840
+          },
+          {
+            "count": 1,
+            "value": 2040
+          },
+          {
+            "count": 1,
+            "value": 2100
+          },
+          {
+            "count": 1,
+            "value": 2460
+          },
+          {
+            "count": 1,
+            "value": 2880
+          },
+          {
+            "count": 1,
+            "value": 3120
+          },
+          {
+            "count": 1,
+            "value": 3180
+          },
+          {
+            "count": 1,
+            "value": 3720
+          },
+          {
+            "count": 1,
+            "value": 4080
+          },
+          {
+            "count": 1,
+            "value": 5040
+          },
+          {
+            "count": 1,
+            "value": 7260
+          },
+          {
+            "count": 1,
+            "value": 23580
+          },
+          {
+            "count": 1,
+            "value": 33180
+          }
+        ],
+        "partial_unexpected_list": [
+          33180,
+          2580,
+          2220,
+          3180,
+          3120,
+          3840,
+          2040,
+          2580,
+          2220,
+          2580,
+          4080,
+          2880,
+          5040,
+          7260,
+          2100,
+          3840,
+          2220,
+          3720,
+          2460,
+          23580
+        ],
+        "unexpected_count": 16499405,
+        "unexpected_percent": 19.7798355382831,
+        "unexpected_percent_nonmissing": 19.7798355382831,
+        "unexpected_percent_total": 19.775192064190527
+      },
+      "success": false
+    },
+    {
+      "exception_info": {
+        "exception_message": null,
+        "exception_traceback": null,
+        "raised_exception": false
+      },
+      "expectation_config": {
+        "expectation_type": "expect_column_values_to_not_be_null",
+        "kwargs": {
+          "batch_id": "london_bikes_bq-stg_cycle_hire",
+          "column": "start_station_id"
+        },
+        "meta": {}
+      },
+      "meta": {},
+      "result": {
+        "element_count": 83434866,
+        "partial_unexpected_counts": [
+          {
+            "count": 20,
+            "value": null
+          }
+        ],
+        "partial_unexpected_list": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "unexpected_count": 1495051,
+        "unexpected_percent": 1.791877990191774
+      },
+      "success": false
+    },
+    {
+      "exception_info": {
+        "exception_message": null,
+        "exception_traceback": null,
+        "raised_exception": false
+      },
+      "expectation_config": {
+        "expectation_type": "expect_column_values_to_not_be_null",
+        "kwargs": {
+          "batch_id": "london_bikes_bq-stg_cycle_hire",
+          "column": "end_station_id"
+        },
+        "meta": {}
+      },
+      "meta": {},
+      "result": {
+        "element_count": 83434866,
+        "partial_unexpected_counts": [
+          {
+            "count": 20,
+            "value": null
+          }
+        ],
+        "partial_unexpected_list": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "unexpected_count": 1626434,
+        "unexpected_percent": 1.9493457327539785
+      },
+      "success": false
+    }
+  ],
+  "statistics": {
+    "evaluated_expectations": 4,
+    "success_percent": 25.0,
+    "successful_expectations": 1,
+    "unsuccessful_expectations": 3
+  },
+  "success": false
+}

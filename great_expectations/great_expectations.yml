@@ -1,0 +1,64 @@
+# Great Expectations Fluent config for LondonBicycles BigQuery project
+config_version: 3.0
+
+stores:
+  expectations_store:
+    class_name: ExpectationsStore
+    store_backend:
+      class_name: TupleFilesystemStoreBackend
+      base_directory: expectations
+
+  validations_store:
+    class_name: ValidationsStore
+    store_backend:
+      class_name: TupleFilesystemStoreBackend
+      base_directory: uncommitted/validations
+
+  checkpoints_store:
+    class_name: CheckpointStore
+    store_backend:
+      class_name: TupleFilesystemStoreBackend
+      base_directory: checkpoints
+
+  evaluation_parameter_store:
+    class_name: EvaluationParameterStore
+data_docs_sites:
+  local_site:
+    class_name: SiteBuilder
+    store_backend:
+      class_name: TupleFilesystemStoreBackend
+      base_directory: uncommitted/data_docs/local_site
+    site_index_builder:
+      class_name: DefaultSiteIndexBuilder
+
+expectations_store_name: expectations_store
+validations_store_name: validations_store
+evaluation_parameter_store_name: evaluation_parameter_store
+checkpoint_store_name: checkpoints_store
+
+fluent_datasources:
+  london_bikes_bq:
+    type: sql
+    assets:
+      stg_cycle_hire:
+        type: query
+        order_by: []
+        batch_metadata: {}
+        query: SELECT * FROM `decisive-studio-469008-m2.LondonBicycles_Stage.stg_cycle_hire`
+      cycle_hire_raw:
+        type: query
+        order_by: []
+        batch_metadata: {}
+        query: SELECT * FROM `decisive-studio-469008-m2.LondonBicycles_Raw.cycle_hire_raw`
+    connection_string: bigquery://decisive-studio-469008-m2
+datasources: {}
+plugins_directory:
+notebooks:
+config_variables_file_path:
+anonymous_usage_statistics:
+  data_context_id: 4b386888-a3a3-4658-8ae9-f88e3b8198ca
+  enabled: true
+include_rendered_content:
+  globally: false
+  expectation_suite: false
+  expectation_validation_result: false

@@ -20,7 +20,8 @@ st.title("🚴 London Bikes Analytics")
 
 
 # Load image
-img_path = "/Users/anjan/DSAI_Project_Group6/LondonBicycles/Image.png"
+base_path = os.path.dirname(__file__)
+img_path = os.path.join(base_path, "image.jpg")
 img = Image.open(img_path)
 
 # Crop height by half (keep top half)

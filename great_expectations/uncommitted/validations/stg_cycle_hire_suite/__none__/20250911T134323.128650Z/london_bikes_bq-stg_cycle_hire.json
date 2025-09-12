@@ -1,0 +1,63 @@
+{
+  "evaluation_parameters": {},
+  "meta": {
+    "active_batch_definition": {
+      "batch_identifiers": {},
+      "data_asset_name": "stg_cycle_hire",
+      "data_connector_name": "fluent",
+      "datasource_name": "london_bikes_bq"
+    },
+    "batch_markers": {
+      "ge_load_time": "20250911T134323.185602Z"
+    },
+    "batch_spec": {
+      "batch_identifiers": {},
+      "data_asset_name": "stg_cycle_hire",
+      "query": "SELECT * FROM `decisive-studio-469008-m2.LondonBicycles_Stage.stg_cycle_hire`",
+      "temp_table_schema_name": null
+    },
+    "checkpoint_id": null,
+    "checkpoint_name": "stg_cycle_hire_checkpoint",
+    "expectation_suite_name": "stg_cycle_hire_suite",
+    "great_expectations_version": "0.18.22",
+    "run_id": {
+      "run_name": null,
+      "run_time": "2025-09-11T21:43:23.128650+08:00"
+    },
+    "validation_id": null,
+    "validation_time": "20250911T134323.187442Z"
+  },
+  "results": [
+    {
+      "exception_info": {
+        "exception_message": null,
+        "exception_traceback": null,
+        "raised_exception": false
+      },
+      "expectation_config": {
+        "expectation_type": "expect_column_values_to_not_be_null",
+        "kwargs": {
+          "batch_id": "london_bikes_bq-stg_cycle_hire",
+          "column": "rental_id"
+        },
+        "meta": {}
+      },
+      "meta": {},
+      "result": {
+        "element_count": 83434866,
+        "partial_unexpected_counts": [],
+        "partial_unexpected_list": [],
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0
+      },
+      "success": true
+    }
+  ],
+  "statistics": {
+    "evaluated_expectations": 1,
+    "success_percent": 100.0,
+    "successful_expectations": 1,
+    "unsuccessful_expectations": 0
+  },
+  "success": true
+}
