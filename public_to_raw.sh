@@ -7,6 +7,15 @@
 
 set -e # Exit the script immediately if any command fails
 
+# --- First Run Detection ---
+FLAG_FILE=".initial_load_complete"
+if [ -f "$FLAG_FILE" ]; then
+  echo "INFO: Initial load already completed."
+  echo "INFO: Please start the Kafka consumer for incremental updates."
+  echo "INFO: Example: python kafka_consumer.py"
+  exit 0
+fi
+
 # --- Load Environment Variables from .env file ---
 # --- Load Environment Variables from .env file ---
 if [ -f .env ]; then
@@ -70,4 +79,8 @@ bq load --location=$DESTINATION_LOCATION --source_format=AVRO --replace=true "$G
 
 echo "INFO: Step 5/7: Cleaning up temporary files from GCS bucket..."
 gsutil -m rm "$GCS_BUCKET_FULL_PATH/export/**"
+
+# --- Mark initial load complete ---
+touch "$FLAG_FILE"
+echo "INFO: Initial load complete. Flag file created."
 
