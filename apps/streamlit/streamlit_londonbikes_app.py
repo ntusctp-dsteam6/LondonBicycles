@@ -513,6 +513,64 @@ with tabs[1]:
 
     st.plotly_chart(fig_heatmap, use_container_width=True)
 
+    # -----------------------------
+    # Least Utilized Stations (Last 12 Months)
+    # -----------------------------
+    st.header("❄️ Least Utilized Stations (Last 12 Months)")
+
+    # Last 12 months filter
+    route_df['year_month'] = route_df['year']*100 + route_df['month']
+    last_12_ym = sorted(route_df['year_month'].unique())[-12:]
+    route_12m_df = route_df[route_df['year_month'].isin(last_12_ym)]
+
+    # Compute inflow per station
+    inflow_df = route_12m_df.groupby('end_station_name')['trip_count'].sum().reset_index(name='inflow')
+
+    # Compute outflow per station
+    outflow_df = route_12m_df.groupby('start_station_name')['trip_count'].sum().reset_index(name='outflow')
+
+    # Merge inflow + outflow
+    station_usage = pd.merge(
+        inflow_df, outflow_df,
+        left_on='end_station_name', right_on='start_station_name',
+        how='outer'
+    ).fillna(0)
+
+    # Compute total traffic
+    station_usage['total_traffic'] = station_usage['inflow'] + station_usage['outflow']
+
+    # Use one station_name column and drop redundant
+    station_usage['station_name'] = station_usage['end_station_name'].combine_first(station_usage['start_station_name'])
+    station_usage = station_usage[['station_name', 'inflow', 'outflow', 'total_traffic']]
+
+    # Merge docks_count from station_static and exclude stations with 0 docks
+    station_usage = station_usage.merge(
+        station_static[['station_name', 'docks_count']],
+        on='station_name',
+        how='left'
+    )
+    station_usage = station_usage[station_usage['docks_count'] > 0]
+
+    # Pick bottom N stations
+    bottom_n = 10
+    least_used_stations = station_usage.nsmallest(bottom_n, 'total_traffic')
+
+    # Plot bar chart
+    fig_least_used = px.bar(
+        least_used_stations,
+        x='station_name',
+        y='total_traffic',
+        text='total_traffic',
+        color='total_traffic',
+        color_continuous_scale='Viridis_r',
+        title=f"Bottom {bottom_n} Least Utilized Stations (Last 12 Months)",
+        labels={'total_traffic': 'Total Inflow + Outflow'}
+    )
+    fig_least_used.update_traces(texttemplate='%{text:.0f}', textposition='outside')
+    fig_least_used.update_layout(yaxis_title='Total Trips', margin=dict(t=80, b=40, l=60, r=40))
+
+    st.plotly_chart(fig_least_used, use_container_width=True)
+
 # -----------------------------
 # Tab 3: Trip Duration & Return
 # -----------------------------
