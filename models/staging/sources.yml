@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: LondonBicycles_Raw
+    database: "{{ env_var('DSAI_PROJECT_ID') }}"    # BigQuery project id
+    schema: LondonBicycles_Raw                                # BigQuery dataset name
+    tables:
+      - name: cycle_hire_raw
+      - name: cycle_stations_raw

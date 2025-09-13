@@ -7,5 +7,6 @@ SELECT
   locked,
   install_date,
   removal_date,
-  temporary
+  temporary,
+  docks_count
 FROM {{ ref('stg_cycle_stations') }}
